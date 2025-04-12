@@ -1,0 +1,360 @@
+.data-table-container {
+  min-height: 100vh;
+  background-color: #f9fafb;
+  padding: 24px;
+  max-width: 1920px;
+  margin: 0 auto;
+}
+
+.data-table-wrapper {
+  max-width: 80rem;
+  margin: 0 auto;
+  padding: 0 1rem;
+}
+
+.data-table-header {
+  text-align: center;
+  margin-bottom: 24px;
+}
+
+.data-table-title {
+  font-size: 24px;
+  font-weight: 600;
+  color: #2d3748;
+  margin-bottom: 8px;
+}
+
+.data-table-subtitle {
+  margin-top: 0.75rem;
+  max-width: 36rem;
+  margin-left: auto;
+  margin-right: auto;
+  font-size: 1.25rem;
+  line-height: 1.75rem;
+  color: #6b7280;
+}
+
+.data-table-list {
+  background-color: white;
+  border-radius: 0.5rem;
+  box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
+  overflow: hidden;
+}
+
+.data-table-list-item {
+  display: flex;
+  align-items: center;
+  padding: 1rem 1.5rem;
+  border-bottom: 1px solid #e5e7eb;
+  transition: background-color 0.2s;
+}
+
+.data-table-list-item:last-child {
+  border-bottom: none;
+}
+
+.data-table-list-item:hover {
+  background-color: #f9fafb;
+}
+
+.data-table-number-badge {
+  flex-shrink: 0;
+  width: 2.5rem;
+  height: 2.5rem;
+  border-radius: 9999px;
+  background: linear-gradient(to right, #3b82f6, #2563eb);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-right: 1rem;
+}
+
+.data-table-number {
+  color: white;
+  font-weight: 700;
+  font-size: 1rem;
+}
+
+.data-table-skill-name {
+  flex-grow: 1;
+  font-size: 1rem;
+  line-height: 1.5rem;
+  font-weight: 500;
+  color: #111827;
+}
+
+.data-table-update-info {
+  display: flex;
+  align-items: center;
+  font-size: 0.875rem;
+  line-height: 1.25rem;
+  color: #6b7280;
+  margin-right: 1rem;
+}
+
+.data-table-detail-button {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.25rem 0.75rem;
+  border: transparent;
+  font-size: 0.875rem;
+  line-height: 1.25rem;
+  font-weight: 500;
+  border-radius: 0.375rem;
+  color: #1d4ed8;
+  background-color: #dbeafe;
+  transition: background-color 0.2s;
+  margin-left: 20px;
+}
+
+.data-table-detail-button:hover {
+  background-color: #bfdbfe;
+}
+
+.data-table-detail-button:focus {
+  outline: none;
+  box-shadow: 0 0 0 2px #bfdbfe;
+}
+
+/* Loading spinner */
+.data-table-loading {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 16rem;
+}
+
+.data-table-spinner {
+  animation: spin 1s linear infinite;
+  border-radius: 9999px;
+  height: 3rem;
+  width: 3rem;
+  border-top: 2px solid #3b82f6;
+  border-bottom: 2px solid #3b82f6;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* Error message */
+.data-table-error {
+  background-color: #fef2f2;
+  border-left: 4px solid #ef4444;
+  padding: 1rem;
+}
+
+.data-table-error-content {
+  display: flex;
+}
+
+.data-table-error-icon {
+  flex-shrink: 0;
+  height: 1.25rem;
+  width: 1.25rem;
+  color: #f87171;
+}
+
+.data-table-error-message {
+  margin-left: 0.75rem;
+  font-size: 0.875rem;
+  line-height: 1.25rem;
+  color: #b91c1c;
+}
+
+.data-table-select {
+  width: 100%;
+  max-width: 400px;
+  padding: 16px;
+  font-size: 16px;
+  border: 2px solid #e2e8f0;
+  border-radius: 8px;
+  background-color: white;
+  color: #1a202c;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%234a5568'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 16px center;
+  background-size: 20px;
+  margin-bottom: 24px;
+}
+
+.data-table-select:hover {
+  border-color: #cbd5e0;
+}
+
+.data-table-select:focus {
+  outline: none;
+  border-color: #4299e1;
+  box-shadow: 0 0 0 3px rgba(66, 153, 225, 0.2);
+}
+
+.data-table-select option {
+  padding: 8px;
+  font-size: 16px;
+}
+
+.data-table-select option:first-child {
+  color: #718096;
+}
+
+.data-table-grid {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 200px;
+}
+
+.data-table-content {
+  width: 100%;
+  max-width: 1800px;
+  margin: 0 auto;
+}
+
+.data-table-detail {
+  margin-top: 24px;
+  padding: 32px;
+  background-color: white;
+  border-radius: 12px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.data-table-detail-title {
+  font-size: 24px;
+  font-weight: 700;
+  color: #1a202c;
+  margin-bottom: 24px;
+  padding-bottom: 16px;
+  border-bottom: 2px solid #e2e8f0;
+}
+
+.data-table-detail-content {
+  color: #4a5568;
+  line-height: 1.6;
+}
+
+.data-table-detail-content > div {
+  min-width: 1200px;
+  background-color: #f8fafc;
+  border-radius: 8px;
+  padding: 24px;
+  margin-bottom: 16px;
+}
+
+.data-table-detail-content h4 {
+  font-size: 18px;
+  font-weight: 600;
+  color: #2d3748;
+  margin-bottom: 16px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.data-table-detail-content p {
+  font-size: 16px;
+  padding: 12px 16px;
+  background-color: white;
+  border-radius: 6px;
+  margin: 8px 0;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  max-width: 1200px;
+}
+
+.data-table-detail-content p::before {
+  content: "•";
+  color: #4299e1;
+  font-weight: bold;
+}
+
+.data-table-modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+}
+
+.data-table-modal-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.5);
+}
+
+.data-table-modal-content {
+  position: relative;
+  background-color: white;
+  border-radius: 12px;
+  padding: 32px;
+  width: 90%;
+  max-width: 1200px;
+  max-height: 90vh;
+  overflow-y: auto;
+  z-index: 1001;
+}
+
+.data-table-close-button {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  font-size: 24px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: #718096;
+  padding: 8px;
+  line-height: 1;
+}
+
+.data-table-close-button:hover {
+  color: #2d3748;
+}
+
+.data-table-add-button {
+  display: block;
+  width: 100%;
+  max-width: 200px;
+  margin: 24px auto 0;
+  padding: 12px 24px;
+  background-color: #4299e1;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.data-table-add-button2 {
+  
+  width: 100%;
+  max-width: 200px;
+  margin-left: 20px;
+  padding: 12px 24px;
+  background-color: #4299e1;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.data-table-add-button:hover {
+  background-color: #3182ce;
+} 
