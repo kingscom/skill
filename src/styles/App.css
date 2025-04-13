@@ -33,8 +33,8 @@
 .hero-section {
   background: linear-gradient(135deg, var(--primary), var(--primary-light));
   border-radius: 2rem;
-  padding: 4rem 2rem;
-  margin-bottom: 3rem;
+  padding: 2rem 1rem;
+  margin-bottom: 1rem;
   box-shadow: var(--shadow);
   animation: fadeIn 0.5s ease-out;
 }
@@ -47,7 +47,7 @@
 
 .hero-title {
   color: white;
-  font-size: 3.5rem;
+  font-size: 2.5rem;
   font-weight: 700;
   margin-bottom: 1.5rem;
   line-height: 1.2;
@@ -59,7 +59,7 @@
 .hero-subtitle {
   color: rgba(255, 255, 255, 0.9);
   font-size: 1.25rem;
-  margin-bottom: 2rem;
+  margin-bottom: 1rem;
   line-height: 1.6;
 }
 

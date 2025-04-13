@@ -18,7 +18,7 @@ function App() {
           <div className="hero-section">
             <div className="hero-content">
               <h1 className="hero-title">스킬 분석 시스템</h1>
-              <p className="hero-subtitle">개인의 스킬을 분석하고 성장을 도와드립니다</p>
+              <p className="hero-subtitle">조직의 스킬 분석 및 역량 향상 제공</p>
             </div>
           </div>
 
