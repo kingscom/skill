@@ -1,52 +1,94 @@
 .skill-set-manager {
   max-width: 1200px;
   margin: 0 auto;
-  padding: 1.5rem;
+  padding: 2rem;
+  background-color: #ffffff;
+  min-height: 100vh;
 }
 
 .skill-set-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 1.5rem;
+  margin-bottom: 2.5rem;
+  padding-bottom: 1.5rem;
+  border-bottom: 1px solid #e2e8f0;
 }
 
 .skill-set-title {
-  font-size: 1.75rem;
+  font-size: 2rem;
   font-weight: 700;
-  color: #2d3748;
+  color: #1a202c;
+  margin: 0;
 }
 
-.add-skill-button {
-  background-color: #4299e1;
-  color: white;
-  padding: 0.5rem 1rem;
-  border-radius: 0.375rem;
+.skill-sections {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 2rem;
+  margin-top: 2rem;
+}
+
+.skill-section {
+  background-color: #ffffff;
+  border-radius: 1rem;
+  padding: 1.5rem;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+}
+
+.section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1.5rem;
+}
+
+.section-title {
+  font-size: 1.5rem;
+  font-weight: 600;
+  color: #2d3748;
+  margin: 0;
+}
+
+.skill-set-button {
+  padding: 0.75rem 1.5rem;
+  border-radius: 0.5rem;
   font-weight: 600;
   font-size: 0.875rem;
-  transition: background-color 0.2s;
+  cursor: pointer;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
 }
 
-.add-skill-button:hover {
+.skill-set-add-button {
+  background-color: #4299e1;
+  color: white;
+  border: none;
+}
+
+.skill-set-add-button:hover {
   background-color: #3182ce;
 }
 
 .skill-list {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  display: flex;
+  flex-direction: column;
   gap: 1rem;
 }
 
 .skill-card {
-  background-color: white;
-  border-radius: 0.5rem;
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  background-color: #f8fafc;
+  border-radius: 0.75rem;
   padding: 1rem;
-  transition: transform 0.2s;
+  border: 1px solid #e2e8f0;
+  transition: transform 0.2s, box-shadow 0.2s;
 }
 
 .skill-card:hover {
   transform: translateY(-2px);
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
 }
 
 .skill-card-header {
@@ -60,61 +102,34 @@
   font-size: 1.125rem;
   font-weight: 600;
   color: #2d3748;
+  margin: 0;
+}
+
+.delete-button {
+  background: #e53e3e;
+  border: none;
+  color: white;
+  cursor: pointer;
+  padding: 0.5rem;
+  border-radius: 0.375rem;
+  transition: all 0.2s;
+}
+
+.delete-button:hover {
+  background-color: #fff5f5;
 }
 
 .skill-requirement {
   color: #4a5568;
-  margin-bottom: 0.75rem;
   font-size: 0.875rem;
-}
-
-.skill-levels {
-  background-color: #f7fafc;
-  border-radius: 0.375rem;
-  padding: 0.75rem;
-}
-
-.skill-level {
-  display: flex;
-  justify-content: space-between;
-  margin-bottom: 0.25rem;
-  padding: 0.125rem 0;
-  font-size: 0.875rem;
-}
-
-.skill-level:last-child {
-  margin-bottom: 0;
-}
-
-.level-label {
-  font-weight: 600;
-  color: #4a5568;
-}
-
-.level-value {
-  color: #2d3748;
-}
-
-.delete-button {
-  background-color: #fc8181;
-  color: white;
-  padding: 0.25rem 0.75rem;
-  border-radius: 0.375rem;
-  font-weight: 600;
-  font-size: 0.75rem;
-  transition: background-color 0.2s;
-}
-
-.delete-button:hover {
-  background-color: #f56565;
+  margin: 0;
+  line-height: 1.5;
 }
 
 .empty-state {
   text-align: center;
   padding: 2rem;
-  background-color: #f7fafc;
-  border-radius: 0.5rem;
-  color: #4a5568;
+  color: #718096;
   font-size: 0.875rem;
 }
 
@@ -397,4 +412,44 @@
 
 .skill-modal-add-button:hover {
   background-color: #3182ce;
+}
+
+.skill-card-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.75rem;
+  background-color: #f8fafc;
+  border-radius: 0.5rem;
+  margin-bottom: 0.75rem;
+  position: relative;
+}
+
+.skill-card-item-title {
+  font-weight: 600;
+  color: #4a5568;
+  font-size: 0.875rem;
+  position: relative;
+  padding-right: 0.5rem;
+}
+
+.skill-card-item-title::after {
+  content: ':';
+  position: absolute;
+  right: 0;
+  color: #cbd5e0;
+}
+
+.skill-card-item-value {
+  color: #2d3748;
+  font-size: 0.875rem;
+  position: relative;
+  padding-left: 1rem;
+}
+
+.skill-card-item-value::before {
+  content: '-';
+  position: absolute;
+  left: 0;
+  color: #cbd5e0;
 } 

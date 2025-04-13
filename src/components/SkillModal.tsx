@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { supabase } from '../lib/supabase'
 import '../styles/SkillModal.css'
+import { SkillItem } from '../types/skill'
 
 interface DataItem {
   스킬셋: string,
@@ -15,7 +16,7 @@ interface DataItem {
 interface SkillModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onAddSkill: (skill: DataItem) => void;
+  onAddSkill: (skills: SkillItem[]) => void;
   onShowDetail: (showDetail: boolean) => void;
   isShowDetail: boolean;
 }
@@ -128,16 +129,16 @@ export function SkillModal({ isOpen, onClose, onAddSkill, onShowDetail, isShowDe
                     <div className="data-table-detail-content">
                       {selectedSkill.map((skill) => (
                         <div>
-                          <h4>{skill.요구역량}
+                          <h4> ■ {skill.요구역량}
                             
                           </h4>
                           {isShowDetail && (
                             <>
-                              <p>L1: {skill.L1}</p>
-                              <p>L2: {skill.L2}</p>
-                              <p>L3: {skill.L3}</p>
-                              <p>L4: {skill.L4}</p>
-                              <p>L5: {skill.L5}</p>
+                              <p>- L1: {skill.L1}</p>
+                              <p>- L2: {skill.L2}</p>
+                              <p>- L3: {skill.L3}</p>
+                              <p>- L4: {skill.L4}</p>
+                              <p>- L5: {skill.L5}</p>
                             </>
                           )}
                         </div>
@@ -145,7 +146,7 @@ export function SkillModal({ isOpen, onClose, onAddSkill, onShowDetail, isShowDe
                     </div>
                     <button 
                       className="data-table-add-button"
-                      onClick={() => onAddSkill(selectedSkill[0])}
+                      onClick={() => onAddSkill(selectedSkill)}
                     >
                       스킬 추가하기
                     </button>
