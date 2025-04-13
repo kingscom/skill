@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { SkillModal } from './SkillModal'
 import '../styles/SkillSetManager.css'
 import { SkillItem } from '../types/skill'
+import * as XLSX from 'xlsx'
 
 export function SkillSetManager() {
   const [isModalOpen, setIsModalOpen] = useState(false)
@@ -38,6 +39,43 @@ export function SkillSetManager() {
     setIsShowDetail(showDetail)
   }
 
+  const handleDownloadExcel = () => {
+    // 주스킬과 부스킬 데이터를 하나의 배열로 합치기
+    const allSkills = [
+      ...skillList.map(skill => ({ ...skill, 구분: '주스킬' })),
+      ...subSkillList.map(skill => ({ ...skill, 구분: '부스킬' }))
+    ]
+
+    // Excel 워크북 생성
+    const wb = XLSX.utils.book_new()
+    
+    // 데이터를 워크시트로 변환
+    const ws = XLSX.utils.json_to_sheet(allSkills, {
+      header: ['구분', '스킬셋', '요구역량', '현재수준', '기대수준', 'L1', 'L2', 'L3', 'L4', 'L5']
+    })
+
+    // 열 너비 자동 조정
+    const colWidths = [
+      { wch: 8 },  // 구분
+      { wch: 15 }, // 스킬셋
+      { wch: 30 }, // 요구역량
+      { wch: 10 }, // 현재수준
+      { wch: 10 }, // 기대수준
+      { wch: 20 }, // L1
+      { wch: 20 }, // L2
+      { wch: 20 }, // L3
+      { wch: 20 }, // L4
+      { wch: 20 }  // L5
+    ]
+    ws['!cols'] = colWidths
+
+    // 워크시트를 워크북에 추가
+    XLSX.utils.book_append_sheet(wb, ws, 'skillset')
+
+    // Excel 파일 다운로드
+    XLSX.writeFile(wb, 'skillset_list.xlsx')
+  }
+
   const groupedSkills = skillList.reduce((acc, skill) => {
     if (!acc[skill.스킬셋]) {
       acc[skill.스킬셋] = [];
@@ -58,6 +96,12 @@ export function SkillSetManager() {
     <div className="skill-set-manager">
       <div className="skill-set-header">
         <h1 className="skill-set-title">스킬셋 리스트</h1>
+        <button 
+          className="skill-set-button skill-set-add-button"
+          onClick={handleDownloadExcel}
+        >
+          Excel로 다운로드
+        </button>
       </div>
 
       <div className="skill-sections">
