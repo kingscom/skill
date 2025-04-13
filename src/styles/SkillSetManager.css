@@ -1,5 +1,6 @@
 .skill-set-manager {
-  max-width: 1200px;
+  max-width: 1000px;
+  width: 100%;
   margin: 0 auto;
   padding: 1rem;
   background-color: #ffffff;
@@ -21,6 +22,13 @@
   text-align: center;
 }
 
+.button-group {
+  display: flex;
+  gap: 1rem;
+  width: 100%;
+  justify-content: center;
+}
+
 .skill-set-button {
   padding: 0.5rem 1rem;
   border: none;
@@ -36,6 +44,14 @@
 
 .skill-set-button:hover {
   background-color: #45a049;
+}
+
+.back-button {
+  background-color: #6c757d;
+}
+
+.back-button:hover {
+  background-color: #5a6268;
 }
 
 .skill-sections {
@@ -460,6 +476,11 @@
     flex-direction: row;
     justify-content: space-between;
     align-items: center;
+  }
+
+  .button-group {
+    width: auto;
+    justify-content: flex-end;
   }
 
   .skill-set-button {

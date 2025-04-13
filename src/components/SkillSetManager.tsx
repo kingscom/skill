@@ -4,7 +4,11 @@ import '../styles/SkillSetManager.css'
 import { SkillItem } from '../types/skill'
 import * as XLSX from 'xlsx'
 
-export function SkillSetManager() {
+interface SkillSetManagerProps {
+  onBack: () => void
+}
+
+export function SkillSetManager({ onBack }: SkillSetManagerProps) {
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [isSubModalOpen, setIsSubModalOpen] = useState(false)
   const [skillList, setSkillList] = useState<SkillItem[]>([])
@@ -96,12 +100,20 @@ export function SkillSetManager() {
     <div className="skill-set-manager">
       <div className="skill-set-header">
         <h1 className="skill-set-title">스킬셋 리스트</h1>
-        <button 
-          className="skill-set-button skill-set-add-button"
-          onClick={handleDownloadExcel}
-        >
-          Excel로 다운로드
-        </button>
+        <div className="button-group">
+          <button 
+            className="skill-set-button back-button"
+            onClick={onBack}
+          >
+            홈으로
+          </button>
+          <button 
+            className="skill-set-button skill-set-add-button"
+            onClick={handleDownloadExcel}
+          >
+            Excel로 다운로드
+          </button>
+        </div>
       </div>
 
       <div className="skill-sections">

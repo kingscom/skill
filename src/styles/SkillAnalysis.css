@@ -1,0 +1,90 @@
+.skill-analysis {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 1rem;
+}
+
+.analysis-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 2rem;
+}
+
+.analysis-title {
+  font-size: 1.5rem;
+  color: #333;
+  margin: 0;
+}
+
+.back-button {
+  padding: 0.5rem 1rem;
+  border: none;
+  border-radius: 0.5rem;
+  background-color: #6c757d;
+  color: white;
+  cursor: pointer;
+  font-size: 0.875rem;
+  transition: background-color 0.3s;
+}
+
+.back-button:hover {
+  background-color: #5a6268;
+}
+
+.analysis-content {
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+}
+
+.analysis-section {
+  background: white;
+  border-radius: 0.5rem;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  padding: 1.5rem;
+}
+
+.section-title {
+  font-size: 1.25rem;
+  color: #333;
+  margin: 0 0 1rem 0;
+}
+
+.selected-skills {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.skill-item {
+  background: #e9ecef;
+  padding: 0.5rem 1rem;
+  border-radius: 0.25rem;
+  font-size: 0.875rem;
+  color: #495057;
+}
+
+.empty-state {
+  text-align: center;
+  padding: 1rem;
+  color: #666;
+  font-size: 0.875rem;
+}
+
+.analysis-result {
+  min-height: 200px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+@media (min-width: 768px) {
+  .analysis-content {
+    flex-direction: row;
+  }
+
+  .analysis-section {
+    flex: 1;
+  }
+} 
