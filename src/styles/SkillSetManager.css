@@ -1,0 +1,114 @@
+.skill-set-manager {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 2rem;
+}
+
+.skill-set-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 2rem;
+}
+
+.skill-set-title {
+  font-size: 2rem;
+  font-weight: 700;
+  color: #2d3748;
+}
+
+.add-skill-button {
+  background-color: #4299e1;
+  color: white;
+  padding: 0.75rem 1.5rem;
+  border-radius: 0.375rem;
+  font-weight: 600;
+  transition: background-color 0.2s;
+}
+
+.add-skill-button:hover {
+  background-color: #3182ce;
+}
+
+.skill-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 1.5rem;
+}
+
+.skill-card {
+  background-color: white;
+  border-radius: 0.5rem;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  padding: 1.5rem;
+  transition: transform 0.2s;
+}
+
+.skill-card:hover {
+  transform: translateY(-2px);
+}
+
+.skill-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem;
+}
+
+.skill-name {
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: #2d3748;
+}
+
+.skill-requirement {
+  color: #4a5568;
+  margin-bottom: 1rem;
+}
+
+.skill-levels {
+  background-color: #f7fafc;
+  border-radius: 0.375rem;
+  padding: 1rem;
+}
+
+.skill-level {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 0.5rem;
+  padding: 0.25rem 0;
+}
+
+.skill-level:last-child {
+  margin-bottom: 0;
+}
+
+.level-label {
+  font-weight: 600;
+  color: #4a5568;
+}
+
+.level-value {
+  color: #2d3748;
+}
+
+.delete-button {
+  background-color: #fc8181;
+  color: white;
+  padding: 0.5rem 1rem;
+  border-radius: 0.375rem;
+  font-weight: 600;
+  transition: background-color 0.2s;
+}
+
+.delete-button:hover {
+  background-color: #f56565;
+}
+
+.empty-state {
+  text-align: center;
+  padding: 3rem;
+  background-color: #f7fafc;
+  border-radius: 0.5rem;
+  color: #4a5568;
+} 

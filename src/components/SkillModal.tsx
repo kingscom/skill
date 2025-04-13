@@ -12,13 +12,15 @@ interface DataItem {
   L5: string
 }
 
-interface DataTableProps {
+interface SkillModalProps {
   isOpen: boolean;
   onClose: () => void;
   onAddSkill: (skill: DataItem) => void;
+  onShowDetail: (showDetail: boolean) => void;
+  isShowDetail: boolean;
 }
 
-export function DataTable({ isOpen, onClose, onAddSkill }: DataTableProps) {
+export function SkillModal({ isOpen, onClose, onAddSkill, onShowDetail, isShowDetail }: SkillModalProps) {
   const [data, setSkillList] = useState<DataItem[]>([])
   const [skillNameList, setSkillNameList] = useState<DataItem[]>([])
   const [selectedSkill, setSelectedSkill] = useState<DataItem[]>([])
@@ -101,8 +103,10 @@ export function DataTable({ isOpen, onClose, onAddSkill }: DataTableProps) {
                 <select 
                   className="data-table-select"
                   onChange={(e) => {
+                    setSelectedSkill([]);
                     const selectedValue = e.target.value;
                     const foundSkill = data.filter(item => item.스킬셋 === selectedValue);
+                    console.log(foundSkill);
                     setSelectedSkill(foundSkill);
                   }}
                 >
@@ -119,16 +123,26 @@ export function DataTable({ isOpen, onClose, onAddSkill }: DataTableProps) {
 
                 {selectedSkill.length > 0 && (
                   <div className="data-table-detail">
-                    <h3 className="data-table-detail-title">{selectedSkill[0].스킬셋}</h3>
+                    <h3 className="data-table-detail-title">{selectedSkill[0].스킬셋}
+                      <button className="data-table-add-button2" onClick={() => onShowDetail(!isShowDetail)}>
+                        {isShowDetail ? '레벨상세숨기기' : '레벨상세보기'}
+                      </button>
+                    </h3>
                     <div className="data-table-detail-content">
                       {selectedSkill.map((skill) => (
-                        <div key={skill.스킬셋}>
-                          <h4>{skill.요구역량}</h4>
-                          <p>L1: {skill.L1}</p>
-                          <p>L2: {skill.L2}</p>
-                          <p>L3: {skill.L3}</p>
-                          <p>L4: {skill.L4}</p>
-                          <p>L5: {skill.L5}</p>
+                        <div>
+                          <h4>{skill.요구역량}
+                            
+                          </h4>
+                          {isShowDetail && (
+                            <>
+                              <p>L1: {skill.L1}</p>
+                              <p>L2: {skill.L2}</p>
+                              <p>L3: {skill.L3}</p>
+                              <p>L4: {skill.L4}</p>
+                              <p>L5: {skill.L5}</p>
+                            </>
+                          )}
                         </div>
                       ))}
                     </div>
