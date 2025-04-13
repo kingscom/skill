@@ -1,7 +1,7 @@
 .data-table-container {
   min-height: 100vh;
   background-color: #f9fafb;
-  padding: 24px;
+  padding: 1.5rem;
   max-width: 1920px;
   margin: 0 auto;
   margin-top: 1rem;
@@ -12,17 +12,23 @@
   margin: 0 auto;
   padding: 0 1rem;
   margin-bottom: 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
 }
 
 .data-table-header {
-  text-align: center;
-  margin-bottom: 1rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.75rem;
 }
 
 .data-table-title {
-  font-size: 1.25rem;
+  font-size: 1.125rem;
   font-weight: 600;
   color: #2d3748;
+  margin: 0;
 }
 
 .data-table-subtitle {
@@ -119,34 +125,25 @@
 
 /* Loading spinner */
 .data-table-loading {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  height: 100px;
-}
-
-.data-table-spinner {
+  border: 4px solid #f3f3f3;
+  border-top: 4px solid #4299e1;
+  border-radius: 50%;
+  width: 40px;
+  height: 40px;
   animation: spin 1s linear infinite;
-  border-radius: 9999px;
-  height: 3rem;
-  width: 3rem;
-  border-top: 2px solid #3b82f6;
-  border-bottom: 2px solid #3b82f6;
+  margin: 2rem auto;
 }
 
 @keyframes spin {
-  to {
-    transform: rotate(360deg);
-  }
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
 }
 
 /* Error message */
 .data-table-error {
-  background-color: #fef2f2;
-  border-left: 4px solid #ef4444;
-  padding: 1rem;
   color: #e53e3e;
   text-align: center;
+  padding: 2rem;
 }
 
 .data-table-error-content {
@@ -168,22 +165,14 @@
 }
 
 .data-table-select {
-  width: 100%;
-  max-width: 400px;
-  padding: 0.5rem;
-  font-size: 0.875rem;
-  border-radius: 0.375rem;
+  padding: 0.5rem 0.75rem;
   border: 1px solid #e2e8f0;
+  border-radius: 0.5rem;
+  font-size: 0.8125rem;
+  color: #2d3748;
   background-color: white;
-  color: #1a202c;
+  transition: all 0.2s;
   cursor: pointer;
-  transition: all 0.2s ease;
-  appearance: none;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%234a5568'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E");
-  background-repeat: no-repeat;
-  background-position: right 16px center;
-  background-size: 20px;
-  margin-bottom: 24px;
 }
 
 .data-table-select:hover {
@@ -193,7 +182,7 @@
 .data-table-select:focus {
   outline: none;
   border-color: #4299e1;
-  box-shadow: 0 0 0 3px rgba(66, 153, 225, 0.2);
+  box-shadow: 0 0 0 3px rgba(66, 153, 225, 0.1);
 }
 
 .data-table-select option {
@@ -207,45 +196,47 @@
 
 .data-table-grid {
   display: grid;
-  gap: 1rem;
+  gap: 1.5rem;
 }
 
 .data-table-content {
-  width: 100%;
-  max-width: 1800px;
-  margin: 0 auto;
   display: flex;
   flex-direction: column;
-  gap: 1rem;
+  gap: 1.5rem;
 }
 
 .data-table-detail {
-  margin-top: 1rem;
-  padding: 1rem;
-  background-color: #f7fafc;
+  background-color: #f8fafc;
   border-radius: 0.5rem;
+  padding: 1rem;
+  border: 1px solid #e2e8f0;
 }
 
 .data-table-detail-title {
-  font-size: 1.125rem;
+  font-size: 1rem;
   font-weight: 600;
   color: #2d3748;
-  margin-bottom: 0.75rem;
+  margin: 0 0 0.75rem 0;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
 }
 
 .data-table-detail-content {
-  margin-bottom: 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
 }
 
 .data-table-detail-content h4 {
-  font-size: 1rem;
+  font-size: 0.875rem;
   font-weight: 600;
   color: #4a5568;
-  margin-bottom: 0.5rem;
+  margin: 0;
 }
 
 .data-table-detail-content p {
-  font-size: 0.875rem;
+  font-size: 0.8125rem;
   color: #2d3748;
   margin-bottom: 0.25rem;
 }
@@ -269,17 +260,30 @@
   right: 0;
   bottom: 0;
   background-color: rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(5px);
 }
 
 .data-table-modal-content {
   position: relative;
   background-color: white;
-  border-radius: 0.5rem;
-  padding: 1.5rem;
-  width: 90%;
-  max-width: 1000px;
-  max-height: 90vh;
+  border-radius: 0.75rem;
+  width: 85%;
+  max-width: 800px;
+  max-height: 85vh;
   overflow-y: auto;
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+  animation: modalFadeIn 0.3s ease-out;
+}
+
+@keyframes modalFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 .data-table-close-button {
@@ -288,29 +292,32 @@
   right: 0.75rem;
   background: none;
   border: none;
-  font-size: 1.5rem;
+  font-size: 1.25rem;
+  color: #718096;
   cursor: pointer;
-  color: #4a5568;
+  padding: 0.375rem;
+  border-radius: 50%;
+  transition: all 0.2s;
+  z-index: 1;
 }
 
 .data-table-close-button:hover {
+  background-color: #f7fafc;
   color: #2d3748;
 }
 
 .data-table-add-button {
-  display: block;
-  width: 100%;
-  max-width: 200px;
-  margin: 24px auto 0;
-  padding: 0.5rem 1rem;
   background-color: #4299e1;
   color: white;
-  border: none;
-  border-radius: 0.375rem;
-  font-size: 0.875rem;
+  padding: 0.5rem 1rem;
+  border-radius: 0.5rem;
   font-weight: 600;
+  font-size: 0.75rem;
+  border: none;
   cursor: pointer;
-  transition: background-color 0.2s;
+  transition: all 0.2s;
+  margin-top: 0.75rem;
+  width: 100%;
 }
 
 .data-table-add-button:hover {
@@ -318,21 +325,36 @@
 }
 
 .data-table-add-button2 {
-  
-  width: 100%;
-  max-width: 200px;
-  margin-left: 20px;
-  padding: 0.5rem 1rem;
-  background-color: #4299e1;
-  color: white;
-  border: none;
+  background-color: #e2e8f0;
+  color: #4a5568;
+  padding: 0.375rem 0.75rem;
   border-radius: 0.375rem;
-  font-size: 0.875rem;
   font-weight: 600;
+  font-size: 0.75rem;
+  border: none;
   cursor: pointer;
-  transition: background-color 0.2s;
+  transition: all 0.2s;
 }
 
-.data-table-add-button:hover {
-  background-color: #3182ce;
+.data-table-add-button2:hover {
+  background-color: #cbd5e0;
+}
+
+/* 스크롤바 스타일 */
+.data-table-modal-content::-webkit-scrollbar {
+  width: 8px;
+}
+
+.data-table-modal-content::-webkit-scrollbar-track {
+  background: #f1f1f1;
+  border-radius: 4px;
+}
+
+.data-table-modal-content::-webkit-scrollbar-thumb {
+  background: #cbd5e0;
+  border-radius: 4px;
+}
+
+.data-table-modal-content::-webkit-scrollbar-thumb:hover {
+  background: #a0aec0;
 } 

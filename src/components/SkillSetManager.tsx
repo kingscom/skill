@@ -86,7 +86,7 @@ export function SkillSetManager() {
                   </div>
                   <div className="skill-requirements">
                     {skills.map((skill, index) => (
-                      <p key={index} className="skill-requirement">{skill.요구역량}</p>
+                      <p key={index} className="skill-requirement"> - {skill.요구역량}</p>
                     ))}
                   </div>
                 </div>
@@ -124,7 +124,7 @@ export function SkillSetManager() {
                   </div>
                   <div className="skill-requirements">
                     {skills.map((skill, index) => (
-                      <p key={index} className="skill-requirement">{skill.요구역량}</p>
+                      <p key={index} className="skill-requirement">- {skill.요구역량}</p>
                     ))}
                   </div>
                 </div>
