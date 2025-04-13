@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { supabase } from '../lib/supabase'
-import '../styles/DataTable.css'
+import '../styles/SkillModal.css'
 
 interface DataItem {
   스킬셋: string,
@@ -117,9 +117,6 @@ export function SkillModal({ isOpen, onClose, onAddSkill, onShowDetail, isShowDe
                     </option>
                   ))}
                 </select>
-
-
-                <button className="data-table-add-button2" onClick={() => onAddSkill(selectedSkill[0])}>스킬 추가하기</button>
 
                 {selectedSkill.length > 0 && (
                   <div className="data-table-detail">
