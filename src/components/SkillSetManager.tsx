@@ -1,112 +1,90 @@
-import { useState } from 'react'
-import { SkillModal } from './SkillModal'
-import '../styles/SkillSetManager.css'
-import { SkillItem } from '../types/skill'
-import * as XLSX from 'xlsx'
+import React, { useState, useEffect, useRef } from 'react';
+import { utils, writeFile } from 'xlsx';
+import '../styles/SkillSetManager.css';
+import { SkillModal } from './SkillModal';
+import { SkillItem } from '../types/skill';
 
 interface SkillSetManagerProps {
-  onBack: () => void
+  onBack: () => void;
 }
 
-export function SkillSetManager({ onBack }: SkillSetManagerProps) {
-  const [isModalOpen, setIsModalOpen] = useState(false)
-  const [isSubModalOpen, setIsSubModalOpen] = useState(false)
-  const [skillList, setSkillList] = useState<SkillItem[]>([])
-  const [subSkillList, setSubSkillList] = useState<SkillItem[]>([])
-  const [isShowDetail, setIsShowDetail] = useState(false)
-  
-  // 팀 정보 데이터 객체
-  const [teamInfo, setTeamInfo] = useState({
-    teamName: '',
-    teamWork: '',
-    coreTech: ''
-  })
+export const SkillSetManager: React.FC<SkillSetManagerProps> = ({ onBack }) => {
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isSubModalOpen, setIsSubModalOpen] = useState(false);
+  const [skillList, setSkillList] = useState<SkillItem[]>([]);
+  const [subSkillList, setSubSkillList] = useState<SkillItem[]>([]);
+  const [isShowDetail, setIsShowDetail] = useState(false);
+  const [team, setTeam] = useState<string>('');
+  const [teamWork, setTeamWork] = useState<string>('');
+  const [coreSkill, setCoreSkill] = useState<string>('');
 
-  // 입력 필드 변경 핸들러
   const handleTeamInfoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, value } = e.target
-    setTeamInfo(prev => ({
-      ...prev,
-      [name]: value
-    }))
-  }
-
-  // 팀 정보 입력 필드 데이터
-  const teamInfoFields = [
-    { 
-      id: 'teamName', 
-      label: '팀명', 
-      placeholder: '팀 이름을 입력하세요' 
-    },
-    { 
-      id: 'teamWork', 
-      label: '팀 업무 요약', 
-      placeholder: '팀의 주요 업무를 요약해주세요' 
-    },
-    { 
-      id: 'coreTech', 
-      label: '핵심 기술', 
-      placeholder: '팀에서 사용하는 핵심 기술을 입력하세요' 
+    const { name, value } = e.target;
+    if (name === 'team') {
+      setTeam(value);
+    } else if (name === 'teamWork') {
+      setTeamWork(value);
+    } else if (name === 'coreSkill') {
+      setCoreSkill(value);
     }
-  ]
+  };
+
+  const teamInfoFields = [
+    { id: 'team', label: '팀명', placeholder: '팀 이름을 입력하세요' },
+    { id: 'teamWork', label: '팀 업무 요약', placeholder: '팀의 주요 업무를 요약해주세요' },
+    { id: 'coreSkill', label: '핵심 기술', placeholder: '팀에서 사용하는 핵심 기술을 입력하세요' }
+  ];
 
   const handleAddSkill = (skills: SkillItem[]) => {
-    const isDuplicate = skillList.some(item => item.스킬셋 === skills[0].스킬셋)
+    const isDuplicate = skillList.some(item => item.스킬셋 === skills[0].스킬셋);
     if (!isDuplicate) {
-      setSkillList(prev => [...prev, ...skills])
+      setSkillList(prev => [...prev, ...skills]);
     }
-    setIsModalOpen(false)
-  }
+    setIsModalOpen(false);
+  };
 
   const handleAddSubSkill = (skills: SkillItem[]) => {
-    const isDuplicate = subSkillList.some(item => item.스킬셋 === skills[0].스킬셋)
+    const isDuplicate = subSkillList.some(item => item.스킬셋 === skills[0].스킬셋);
     if (!isDuplicate) {
-      setSubSkillList(prev => [...prev, ...skills])
+      setSubSkillList(prev => [...prev, ...skills]);
     }
-    setIsSubModalOpen(false)
-  }
+    setIsSubModalOpen(false);
+  };
 
   const handleRemoveSkill = (skillName: string) => {
-    setSkillList(prev => prev.filter(skill => skill.스킬셋 !== skillName))
-  }
+    setSkillList(prev => prev.filter(skill => skill.스킬셋 !== skillName));
+  };
 
   const handleRemoveSubSkill = (skillName: string) => {
-    setSubSkillList(prev => prev.filter(skill => skill.스킬셋 !== skillName))
-  }
+    setSubSkillList(prev => prev.filter(skill => skill.스킬셋 !== skillName));
+  };
 
   const handleShowDetail = (showDetail: boolean) => {
-    setIsShowDetail(showDetail)
-  }
+    setIsShowDetail(showDetail);
+  };
 
-  const handleDownloadExcel = () => {
-    // Excel 워크북 생성
-    const wb = XLSX.utils.book_new();
+  const handleDownload = () => {
+    const wb = utils.book_new();
     
-    // 첫 번째 시트: 팀 정보
     const teamData = [{
-      팀: teamInfo.teamName,
-      팀업무: teamInfo.teamWork,
-      핵심기술: teamInfo.coreTech
+      팀: team,
+      팀업무: teamWork,
+      핵심기술: coreSkill
     }];
     
-    // 팀 정보 워크시트 생성
-    const teamWs = XLSX.utils.json_to_sheet(teamData, {
+    const teamWs = utils.json_to_sheet(teamData, {
       header: ['팀', '팀업무', '핵심기술']
     });
     
-    // 열 너비 자동 조정 (팀 정보 시트)
     const teamColWidths = [
-      { wch: 20 }, // 팀
-      { wch: 40 }, // 팀업무
-      { wch: 20 }  // 핵심기술
+      { wch: 20 },
+      { wch: 40 },
+      { wch: 20 }
     ];
     teamWs['!cols'] = teamColWidths;
     
-    // 팀 정보 워크시트를 워크북에 추가
-    XLSX.utils.book_append_sheet(wb, teamWs, '팀');
+    utils.book_append_sheet(wb, teamWs, '팀');
     
-    // 두 번째 시트: 스킬 정보
-    // 주스킬과 부스킬 데이터를 하나의 배열로 합치기
     const allSkills = [
       ...skillList.map(skill => ({ 
         ...skill, 
@@ -118,37 +96,30 @@ export function SkillSetManager({ onBack }: SkillSetManagerProps) {
       }))
     ];
     
-    // 스킬 정보 워크시트 생성
-    const skillWs = XLSX.utils.json_to_sheet(allSkills, {
+    const skillWs = utils.json_to_sheet(allSkills, {
       header: ['구분', '스킬셋', '요구역량', '현재수준', '기대수준', 'L1', 'L2', 'L3', 'L4', 'L5']
     });
     
-    // 열 너비 자동 조정 (스킬 정보 시트)
     const skillColWidths = [
-      { wch: 10 }, // 구분
-      { wch: 20 }, // 스킬셋
-      { wch: 40 }, // 요구역량
-      { wch: 10 }, // 현재수준
-      { wch: 10 }, // 기대수준
-      { wch: 30 }, // L1
-      { wch: 30 }, // L2
-      { wch: 30 }, // L3
-      { wch: 30 }, // L4
-      { wch: 30 }  // L5
+      { wch: 10 },
+      { wch: 20 },
+      { wch: 40 },
+      { wch: 10 },
+      { wch: 10 },
+      { wch: 30 },
+      { wch: 30 },
+      { wch: 30 },
+      { wch: 30 },
+      { wch: 30 }
     ];
     skillWs['!cols'] = skillColWidths;
     
-    // 스킬 정보 워크시트를 워크북에 추가
-    XLSX.utils.book_append_sheet(wb, skillWs, '리더용');
+    utils.book_append_sheet(wb, skillWs, '리더용');
     
-    // 파일명에 팀명 포함 (입력된 경우)
-    const fileName = teamInfo.teamName 
-      ? `${teamInfo.teamName}_skillset_list.xlsx`
-      : 'skillset_list.xlsx';
+    const fileName = team ? `${team}_skillset_list.xlsx` : 'skillset_list.xlsx';
     
-    // Excel 파일 다운로드
-    XLSX.writeFile(wb, fileName);
-  }
+    writeFile(wb, fileName);
+  };
 
   const groupedSkills = skillList.reduce((acc, skill) => {
     if (!acc[skill.스킬셋]) {
@@ -168,17 +139,13 @@ export function SkillSetManager({ onBack }: SkillSetManagerProps) {
 
   return (
     <div className="skill-set-manager">
-
       <div className="button-group">
-        <button 
-          className="skill-set-button back-button"
-          onClick={onBack}
-        >
+        <button className="skill-set-button back-button" onClick={onBack}>
           홈으로
         </button>
-        <button 
+        <button
           className="skill-set-button skill-set-add-button"
-          onClick={handleDownloadExcel}
+          onClick={handleDownload}
         >
           Excel로 다운로드
         </button>
@@ -194,7 +161,7 @@ export function SkillSetManager({ onBack }: SkillSetManagerProps) {
               <input 
                 type="text" 
                 name={field.id}
-                value={teamInfo[field.id as keyof typeof teamInfo]}
+                value={field.id === 'team' ? team : field.id === 'teamWork' ? teamWork : coreSkill}
                 onChange={handleTeamInfoChange}
                 className="skill-set-input" 
                 placeholder={field.placeholder}
@@ -299,5 +266,5 @@ export function SkillSetManager({ onBack }: SkillSetManagerProps) {
         isShowDetail={isShowDetail}
       />
     </div>
-  )
-} 
+  );
+}; 
