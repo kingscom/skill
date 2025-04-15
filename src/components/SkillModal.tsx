@@ -19,9 +19,21 @@ interface SkillModalProps {
   onAddSkill: (skills: SkillItem[]) => void;
   onShowDetail: (showDetail: boolean) => void;
   isShowDetail: boolean;
+  team?: string;
+  teamWork?: string;
+  coreSkill?: string;
 }
 
-export function SkillModal({ isOpen, onClose, onAddSkill, onShowDetail, isShowDetail }: SkillModalProps) {
+export function SkillModal({ 
+  isOpen, 
+  onClose, 
+  onAddSkill, 
+  onShowDetail, 
+  isShowDetail,
+  team = '', 
+  teamWork = '', 
+  coreSkill = '' 
+}: SkillModalProps) {
   const [data, setSkillList] = useState<DataItem[]>([])
   const [skillNameList, setSkillNameList] = useState<DataItem[]>([])
   const [selectedSkill, setSelectedSkill] = useState<DataItem[]>([])
@@ -146,7 +158,15 @@ export function SkillModal({ isOpen, onClose, onAddSkill, onShowDetail, isShowDe
                     </div>
                     <button 
                       className="data-table-add-button"
-                      onClick={() => onAddSkill(selectedSkill)}
+                      onClick={() => {
+                        const skillItems: SkillItem[] = selectedSkill.map(item => ({
+                          ...item,
+                          팀: team,
+                          팀업무: teamWork,
+                          핵심기술: coreSkill
+                        }));
+                        onAddSkill(skillItems);
+                      }}
                     >
                       스킬 추가하기
                     </button>

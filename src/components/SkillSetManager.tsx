@@ -256,6 +256,9 @@ export const SkillSetManager: React.FC<SkillSetManagerProps> = ({ onBack }) => {
         onAddSkill={handleAddSkill}
         onShowDetail={handleShowDetail}
         isShowDetail={isShowDetail}
+        team={team}
+        teamWork={teamWork}
+        coreSkill={coreSkill}
       />
 
       <SkillModal 
@@ -264,6 +267,9 @@ export const SkillSetManager: React.FC<SkillSetManagerProps> = ({ onBack }) => {
         onAddSkill={handleAddSubSkill}
         onShowDetail={handleShowDetail}
         isShowDetail={isShowDetail}
+        team={team}
+        teamWork={teamWork}
+        coreSkill={coreSkill}
       />
     </div>
   );
