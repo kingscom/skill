@@ -17,37 +17,77 @@ function App() {
           {/* Hero Section */}
           <div className="hero-section">
             <div className="hero-content">
-              <h1 className="hero-title">스킬 분석 시스템</h1>
-              <p className="hero-subtitle">조직의 스킬 분석 및 역량 향상 제공</p>
+              <h1 className="hero-title">역량 향상 프레임워크</h1>
+              <p className="hero-subtitle">조직의 스킬 분석 및 역량 향상을 위한 체계적인 접근 방식</p>
+              <div className="hero-actions">
+                <button 
+                  className="hero-button primary"
+                  onClick={() => setCurrentView('selection')}
+                >
+                  스킬셋 선택하기
+                </button>
+                <button 
+                  className="hero-button secondary"
+                  onClick={() => setCurrentView('analysis')}
+                >
+                  스킬 분석하기
+                </button>
+              </div>
             </div>
           </div>
 
           {/* Feature Cards */}
           <div className="feature-section">
+            <h2 className="section-title">주요 기능</h2>
             <div className="feature-grid">
               <div className="feature-card" onClick={() => setCurrentView('selection')}>
                 <div className="card-icon">
-                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-6 h-6">
-                    <path fillRule="evenodd" d="M12 2.25c-5.385 0-9.75 4.365-9.75 9.75s4.365 9.75 9.75 9.75 9.75-4.365 9.75-9.75S17.385 2.25 12 2.25zm-2.625 6c-.532 0-.87-.595-.707-1.061l1.586-1.586c.218-.218.595-.292 1.061-.292s.843.074 1.061.292l1.586 1.586c.36.36.303.924-.062 1.285-.36.36-.924.303-1.285-.061l-1.29-1.29a1.95 1.95 0 01-.062-1.285c0-.213-.074-.427-.293-.586-.185-.12-.471-.186-.707-.186zm4.707 1.061-1.586 1.586c-.78.78-2.043.107-2.043-.707V9.75c0-.894.46-1.715 1.203-2.124.504-.293 1.052-.439 1.574-.439.522 0 1.07.146 1.575.439.743.409 1.203 1.23 1.203 2.124v4.914c0 .813-.78 1.487-2.043.707z" clipRule="evenodd" />
+                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" width="24" height="24">
+                    <path fillRule="evenodd" d="M11.078 2.25c-.917 0-1.699.663-1.85 1.567L9.05 4.889c-.02.12-.115.26-.297.348a7.493 7.493 0 00-.986.57c-.166.115-.334.126-.45.083L5.4 5.272a1.875 1.875 0 00-2.282.819l-.922 1.597a1.875 1.875 0 00.432 2.385l1.313.98c.1.075.173.22.173.35 0 .285-.012.57-.037.855a.534.534 0 01-.163.31l-1.296.97a1.875 1.875 0 00-.432 2.385l.922 1.597a1.875 1.875 0 002.282.818l1.919-.615c.115-.043.283-.031.45.082.312.214.641.405.985.57.182.088.277.228.297.35l.178 1.071c.151.904.933 1.567 1.85 1.567h1.844c.916 0 1.699-.663 1.85-1.567l.178-1.072c.02-.12.114-.26.297-.349.344-.165.673-.356.985-.57.167-.114.335-.125.45-.082l1.919.615a1.875 1.875 0 002.282-.818l.922-1.597a1.875 1.875 0 00-.432-2.385l-1.296-.97a.534.534 0 01-.163-.31c-.024-.285-.037-.57-.037-.855 0-.13.073-.276.173-.35l1.313-.98a1.875 1.875 0 00.432-2.385l-.922-1.597a1.875 1.875 0 00-2.282-.818l-1.919.615c-.114.043-.282.031-.449-.083a7.48 7.48 0 00-.985-.57c-.183-.087-.277-.227-.297-.348l-.179-1.072a1.875 1.875 0 00-1.85-1.567h-1.843zM12 15.75a3.75 3.75 0 100-7.5 3.75 3.75 0 000 7.5z" clipRule="evenodd" />
                   </svg>
                 </div>
-                <h3 className="card-title">스킬 선택</h3>
-                <p className="card-description">조직에 맞는 스킬을 선택 하세요</p>
-                <p className="card-description">1) 주스킬 하나를 선택합니다.</p>
-                <p className="card-description">2) 부스킬 여러개를 선택합니다.</p>
-                <p className="card-description">3) 선택한 데이터를 Excel로 다운로드 합니다.</p>
-                
+                <h3 className="card-title">스킬셋 선택</h3>
+                <p className="card-description">조직에 맞는 스킬셋을 체계적으로 선택하고 관리합니다</p>
+                <ul className="card-features">
+                  <li>주스킬셋 하나를 선택</li>
+                  <li>멀티스킬셋 최대 2개 선택</li>
+                  <li>스킬셋 데이터 Excel 다운로드</li>
+                </ul>
+                <div className="card-action">
+                  <span>선택하기</span>
+                  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" width="16" height="16">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3" />
+                  </svg>
+                </div>
               </div>
+              
               <div className="feature-card" onClick={() => setCurrentView('analysis')}>
                 <div className="card-icon">
-                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-6 h-6">
-                    <path fillRule="evenodd" d="M12 2.25c-5.385 0-9.75 4.365-9.75 9.75s4.365 9.75 9.75 9.75 9.75-4.365 9.75-9.75S17.385 2.25 12 2.25zm-3.75 10.5a.75.75 0 10-1.5 0v-3a.75.75 0 00-1.5 0v3a2.25 2.25 0 01-2.25 2.25H3a2.25 2.25 0 01-2.25-2.25V9.75A2.25 2.25 0 013 7.5h3.75A2.25 2.25 0 019 9.75v3zm7.5 0a.75.75 0 10-1.5 0v-3a.75.75 0 00-1.5 0v3a2.25 2.25 0 01-2.25 2.25H15a2.25 2.25 0 012.25-2.25v-3zm3.75 0a.75.75 0 10-1.5 0v-3a.75.75 0 00-1.5 0v3a2.25 2.25 0 01-2.25 2.25h3.75a2.25 2.25 0 012.25-2.25v3z" clipRule="evenodd" />
+                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" width="24" height="24">
+                    <path fillRule="evenodd" d="M2.25 13.5a8.25 8.25 0 018.25-8.25.75.75 0 01.75.75v6.75H18a.75.75 0 01.75.75 8.25 8.25 0 01-16.5 0z" clipRule="evenodd" />
+                    <path fillRule="evenodd" d="M12.75 3a.75.75 0 01.75-.75 8.25 8.25 0 018.25 8.25.75.75 0 01-.75.75h-7.5a.75.75 0 01-.75-.75V3z" clipRule="evenodd" />
                   </svg>
                 </div>
                 <h3 className="card-title">스킬 분석</h3>
                 <p className="card-description">스킬을 분석하고 개선 방향을 제시합니다</p>
+                <ul className="card-features">
+                  <li>데이터 기반 역량 분석</li>
+                  <li>개인별 스킬 향상 방향 제시</li>
+                  <li>시각화된 분석 결과 제공</li>
+                </ul>
+                <div className="card-action">
+                  <span>분석하기</span>
+                  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" width="16" height="16">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3" />
+                  </svg>
+                </div>
               </div>
             </div>
+          </div>
+          
+          {/* Footer */}
+          <div className="main-footer">
+            <p>© 2023 역량 향상 프레임워크</p>
           </div>
         </div>
       ) : currentView === 'selection' ? (

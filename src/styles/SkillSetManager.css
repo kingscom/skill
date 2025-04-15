@@ -13,20 +13,38 @@
   align-items: center;
   gap: 1rem;
   margin-bottom: 2rem;
+  background: white;
+  border-radius: 10px;
+  padding: 1.5rem;
+  margin-bottom: 2rem;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
 }
 
 .skill-set-title {
   font-size: 1.5rem;
   color: #333;
-  margin: 0;
   text-align: center;
+  position: relative;
+  padding-bottom: 0.75rem;
+}
+
+.skill-set-title:after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 40%;
+  height: 3px;
+  background-color: #4CAF50;
+  border-radius: 3px;
 }
 
 .button-group {
   display: flex;
+  justify-content: flex-end;
   gap: 1rem;
-  width: 100%;
-  justify-content: center;
+  margin-bottom: 1.5rem;
 }
 
 .skill-set-button {
@@ -471,11 +489,64 @@
   color: #cbd5e0;
 }
 
+.skill-set-description {
+  font-size: 0.9rem;
+  color: #555;
+  margin: 0;
+  font-weight: 500;
+  white-space: nowrap;
+  width: 100px;
+}
+
+.skill-set-input {
+  flex: 1;
+  padding: 0.5rem 0.75rem;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  font-size: 0.9rem;
+  margin: 0;
+  transition: all 0.3s ease;
+}
+
+.skill-set-input:focus {
+  border-color: #4CAF50;
+  box-shadow: 0 0 0 2px rgba(76, 175, 80, 0.1);
+  outline: none;
+}
+
+/* Team information layout */
+.team-info-container {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.team-info-item {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  background-color: #f9f9f9;
+  padding: 0.5rem 1rem;
+  border-radius: 8px;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+}
+
 @media (min-width: 768px) {
   .skill-set-header {
-    flex-direction: row;
-    justify-content: space-between;
-    align-items: center;
+    flex-direction: column;
+    align-items: stretch;
+  }
+  
+  .team-info-container {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+  }
+  
+  .team-info-item {
+    margin-bottom: 0;
   }
 
   .button-group {
