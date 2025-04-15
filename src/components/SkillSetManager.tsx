@@ -103,7 +103,7 @@ export function SkillSetManager({ onBack }: SkillSetManagerProps) {
     teamWs['!cols'] = teamColWidths;
     
     // 팀 정보 워크시트를 워크북에 추가
-    XLSX.utils.book_append_sheet(wb, teamWs, '팀 정보');
+    XLSX.utils.book_append_sheet(wb, teamWs, '팀');
     
     // 두 번째 시트: 스킬 정보
     // 주스킬과 부스킬 데이터를 하나의 배열로 합치기
@@ -139,7 +139,7 @@ export function SkillSetManager({ onBack }: SkillSetManagerProps) {
     skillWs['!cols'] = skillColWidths;
     
     // 스킬 정보 워크시트를 워크북에 추가
-    XLSX.utils.book_append_sheet(wb, skillWs, '스킬셋 목록');
+    XLSX.utils.book_append_sheet(wb, skillWs, '리더용');
     
     // 파일명에 팀명 포함 (입력된 경우)
     const fileName = teamInfo.teamName 

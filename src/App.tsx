@@ -18,7 +18,7 @@ function App() {
           <div className="hero-section">
             <div className="hero-content">
               <h1 className="hero-title">역량 향상 프레임워크</h1>
-              <p className="hero-subtitle">조직의 스킬 분석 및 역량 향상을 위한 체계적인 접근 방식</p>
+              <p className="hero-subtitle">우선순위 기반 맞춤형 교육과정 개발</p>
               <div className="hero-actions">
                 <button 
                   className="hero-button primary"
