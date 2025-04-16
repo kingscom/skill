@@ -77,12 +77,55 @@ export const ValidationStep: React.FC<ValidationStepProps> = ({
     item.조직리스트 && item.조직리스트.length > 0
   );
   
-  // 조직리스트 데이터 누락 확인
+  // 조직리스트 데이터 누락 확인 - 수정된 부분
   const hasMissingOrganizationData = editedData.some(item => 
-    item.조직리스트 && item.조직리스트.some(member => 
-      !member.현재수준 || !member.기대수준
-    )
+    item.조직리스트 && item.조직리스트.some(member => {
+      // 현재수준 검사
+      const currentLevel = member.현재수준;
+      const isCurrentLevelMissing = 
+        currentLevel === undefined || 
+        currentLevel === null || 
+        (typeof currentLevel === 'string' && currentLevel.trim() === '');
+      
+      // 기대수준 검사
+      const expectedLevel = member.기대수준;
+      const isExpectedLevelMissing = 
+        expectedLevel === undefined || 
+        expectedLevel === null || 
+        (typeof expectedLevel === 'string' && expectedLevel.trim() === '');
+      
+      // 둘 중 하나라도 누락되었는지 확인
+      return isCurrentLevelMissing || isExpectedLevelMissing;
+    })
   );
+
+  // 디버깅 용도로 추가
+  useEffect(() => {
+    if (hasMissingOrganizationData) {
+      console.log('누락된 데이터가 있는 조직리스트:', 
+        editedData.filter(item => 
+          item.조직리스트 && item.조직리스트.some(member => {
+            // 현재수준 검사
+            const currentLevel = member.현재수준;
+            const isCurrentLevelMissing = 
+              currentLevel === undefined || 
+              currentLevel === null || 
+              (typeof currentLevel === 'string' && currentLevel.trim() === '');
+            
+            // 기대수준 검사
+            const expectedLevel = member.기대수준;
+            const isExpectedLevelMissing = 
+              expectedLevel === undefined || 
+              expectedLevel === null || 
+              (typeof expectedLevel === 'string' && expectedLevel.trim() === '');
+            
+            // 둘 중 하나라도 누락되었는지 확인
+            return isCurrentLevelMissing || isExpectedLevelMissing;
+          })
+        )
+      );
+    }
+  }, [hasMissingOrganizationData, editedData]);
 
   // 데이터 유효성 검사
   const hasInvalidData = editedData.some(item => 
@@ -287,6 +330,22 @@ export const ValidationStep: React.FC<ValidationStepProps> = ({
             )}
             {selectedSkillData && selectedSkillData.조직리스트 && (
               <p>조직 구성원 수: {selectedSkillData.조직리스트.length}</p>
+            )}
+            <p>누락 데이터 있음: {hasMissingOrganizationData ? '예' : '아니오'}</p>
+            <p>유효하지 않은 데이터 있음: {hasInvalidData ? '예' : '아니오'}</p>
+            
+            {selectedSkillData && selectedSkillData.조직리스트 && (
+              <div>
+                <p>현재 선택된 스킬의 조직리스트:</p>
+                <ul style={{ maxHeight: '100px', overflowY: 'auto', margin: '5px 0', padding: '5px', background: '#e9e9e9', listStyle: 'none' }}>
+                  {selectedSkillData.조직리스트.map((member, idx) => (
+                    <li key={idx} style={{ margin: '2px 0', fontSize: '11px' }}>
+                      {member.이름}: 현재수준={member.현재수준}({typeof member.현재수준}), 
+                      기대수준={member.기대수준}({typeof member.기대수준})
+                    </li>
+                  ))}
+                </ul>
+              </div>
             )}
           </div>
           
