@@ -1,20 +1,43 @@
-import { useState, useRef } from 'react'
+import { useState, useRef, useCallback } from 'react'
 import '../styles/SkillAnalysis.css'
 import * as XLSX from 'xlsx'
+import { ValidationStep } from './ValidationStep'
+import { AnalysisStep } from './AnalysisStep'
 
 interface SkillAnalysisProps {
   onBack: () => void
 }
 
 // 데이터셋 타입 정의
-interface DataSheet {
+export interface DataSheet {
   name: string;
   data: Record<string, any>[];
   originalColumns?: string[]; // 원본 열 이름 저장
 }
 
+// 통합 데이터셋 인터페이스 정의
+export interface SkillData {
+  팀?: string;
+  팀업무?: string;
+  핵심기술?: string;
+  스킬셋: string;
+  요구역량: string;
+  현재수준?: number;
+  기대수준?: number;
+  L1?: string;
+  L2?: string;
+  L3?: string;
+  L4?: string;
+  L5?: string;
+  조직리스트?: Array<{
+    이름: string;
+    현재수준: string | number;
+    기대수준: string | number;
+  }>;
+}
+
 // 단계 타입 정의
-type Step = 'upload' | 'data' | 'analysis';
+type Step = 'upload' | 'data' | 'validation' | 'analysis';
 
 export function SkillAnalysis({ onBack }: SkillAnalysisProps) {
   // 파일 입력 참조
@@ -22,6 +45,7 @@ export function SkillAnalysis({ onBack }: SkillAnalysisProps) {
   
   // 상태 관리
   const [dataset, setDataset] = useState<DataSheet[]>([]);
+  const [integratedData, setIntegratedData] = useState<SkillData[]>([]);
   const [fileName, setFileName] = useState<string>('');
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
@@ -32,6 +56,20 @@ export function SkillAnalysis({ onBack }: SkillAnalysisProps) {
   
   // 패널 열기/닫기 상태
   const [expandedPanels, setExpandedPanels] = useState<Set<Step>>(new Set(['upload']));
+  
+  // 유효성 검사 후 데이터 업데이트 처리
+  const handleDataUpdate = useCallback((updatedData: SkillData[]) => {
+    console.log('SkillAnalysis - 데이터 업데이트 수신:', updatedData);
+    
+    if (updatedData && updatedData.length > 0) {
+      // 업데이트된 데이터의 깊은 복사본 생성
+      const newData = JSON.parse(JSON.stringify(updatedData));
+      setIntegratedData(newData);
+      console.log('SkillAnalysis - 업데이트된 통합 데이터:', newData);
+    } else {
+      console.warn('SkillAnalysis - 빈 데이터가 전달되었습니다');
+    }
+  }, []);
   
   // 파일 업로드 및 처리 함수
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -52,6 +90,7 @@ export function SkillAnalysis({ onBack }: SkillAnalysisProps) {
         
         // 워크북에서 모든 시트 읽기
         const sheets: DataSheet[] = [];
+        const rawSheets: Record<string, any[]> = {};
         
         workbook.SheetNames.forEach((sheetName, sheetIndex) => {
           const worksheet = workbook.Sheets[sheetName];
@@ -123,12 +162,20 @@ export function SkillAnalysis({ onBack }: SkillAnalysisProps) {
               data: rows,
               originalColumns: allHeaders
             });
+            
+            // 원시 데이터 저장 (통합을 위해)
+            rawSheets[sheetName] = rows;
           }
         });
         
+        // 데이터셋 통합
+        const integrated = integrateDatasets(rawSheets);
+        
         setDataset(sheets);
+        setIntegratedData(integrated);
         setIsLoading(false);
         console.log('데이터셋 로드 완료:', sheets);
+        console.log('통합 데이터셋:', integrated);
         
         // 업로드 완료 후 다음 단계로 이동
         setCompletedSteps(prev => {
@@ -154,6 +201,100 @@ export function SkillAnalysis({ onBack }: SkillAnalysisProps) {
     
     // 파일을 binary string으로 읽기
     reader.readAsBinaryString(file);
+  };
+  
+  // 데이터셋 통합 함수
+  const integrateDatasets = (rawSheets: Record<string, any[]>): SkillData[] => {
+    console.log('데이터셋 통합 시작:', rawSheets);
+    const integrated: SkillData[] = [];
+    const sheetNames = Object.keys(rawSheets);
+    
+    // 첫 번째, 두 번째, 세 번째 시트 이름 가져오기
+    const teamSheetName = sheetNames[0] || '';
+    const skillSheetName = sheetNames[1] || '';
+    const levelSheetName = sheetNames[2] || '';
+    
+    const teamSheet = rawSheets[teamSheetName] || []; // 첫 번째 시트 (팀 정보)
+    const skillSheet = rawSheets[skillSheetName] || []; // 두 번째 시트 (스킬셋, 요구역량)
+    const levelSheet = rawSheets[levelSheetName] || []; // 세 번째 시트 (현재/기대 수준, L1-L5)
+    
+    // 팀 정보 가져오기
+    const teamInfo = teamSheet.length > 0 ? teamSheet[0] : {};
+    const teamName = teamInfo['팀'] || '';
+    const teamWork = teamInfo['팀업무'] || '';
+    const coreSkill = teamInfo['핵심기술'] || '';
+    
+    // 요구역량 맵 생성 (스킬셋 + 요구역량을 키로 사용)
+    const skillMap = new Map<string, any>();
+    
+    // 스킬셋 및 요구역량 데이터 처리
+    skillSheet.forEach(skill => {
+      const skillSet = skill['스킬셋'] || '';
+      const requirement = skill['요구역량'] || '';
+      const currentLevel = skill['현재수준'] || '';
+      const expectedLevel = skill['기대수준'] || '';
+      
+      if (skillSet && requirement) {
+        const key = `${skillSet}:${requirement}`;
+        skillMap.set(key, {
+          팀: teamName,
+          팀업무: teamWork,
+          핵심기술: coreSkill,
+          스킬셋: skillSet,
+          요구역량: requirement,
+          조직리스트 : []
+        });
+
+        skillMap.get(key).조직리스트.push({
+          이름:'리더',
+          현재수준: currentLevel,
+          기대수준: expectedLevel
+        });
+      }
+    });
+    
+    // 레벨 데이터 처리
+    levelSheet.forEach(level => {
+      const name = level['이름'] || '';
+      
+      // 스킬맵 키를 배열로 변환
+      const skillKeys = Array.from(skillMap.keys());
+      console.log('스킬 키 목록:', skillKeys);
+
+      for (let i = 0; i < skillKeys.length; i++) {
+        const skillKey = skillKeys[i];
+        
+        // 각 조직원의 데이터 객체 생성
+        const data = {
+          이름: name,
+          현재수준: '',
+          기대수준: ''
+        };
+        
+        // 인덱스에 따라 현재/기대 수준 필드 이름 결정
+        const currentLevelField = i === 0 ? '현재수준' : `현재수준${i+2}`;
+        const expectedLevelField = i === 0 ? '기대수준' : `기대수준${i+2}`;
+        
+        // 레벨 데이터 가져오기
+        data.현재수준 = level[currentLevelField] || '';
+        data.기대수준 = level[expectedLevelField] || '';
+        
+        console.log(`조직원 ${name} 스킬 ${skillKey} 데이터:`, data);
+        
+        // 유효한 키인 경우에만 조직리스트에 추가
+        if (skillMap.has(skillKey)) {
+          skillMap.get(skillKey).조직리스트.push(data);
+        }
+      }
+    });
+    
+    // Map을 배열로 변환
+    skillMap.forEach(value => {
+      integrated.push(value);
+    });
+    
+    console.log('통합된 데이터셋:', integrated);
+    return integrated;
   };
   
   // 파일 업로드 트리거 함수
@@ -184,8 +325,13 @@ export function SkillAnalysis({ onBack }: SkillAnalysisProps) {
       return;
     }
     
-    if (step === 'analysis' && !completedSteps.has('data')) {
+    if (step === 'validation' && !completedSteps.has('data')) {
       alert('먼저 데이터를 확인해주세요.');
+      return;
+    }
+
+    if (step === 'analysis' && !completedSteps.has('validation')) {
+      alert('먼저 입력값을 검증해주세요.');
       return;
     }
     
@@ -199,6 +345,8 @@ export function SkillAnalysis({ onBack }: SkillAnalysisProps) {
     if (currentStep === 'upload' && completedSteps.has('upload')) {
       handleGoToStep('data');
     } else if (currentStep === 'data' && completedSteps.has('data')) {
+      handleGoToStep('validation');
+    } else if (currentStep === 'validation' && completedSteps.has('validation')) {
       handleGoToStep('analysis');
     }
   };
@@ -207,8 +355,10 @@ export function SkillAnalysis({ onBack }: SkillAnalysisProps) {
   const handlePrev = () => {
     if (currentStep === 'data') {
       handleGoToStep('upload');
-    } else if (currentStep === 'analysis') {
+    } else if (currentStep === 'validation') {
       handleGoToStep('data');
+    } else if (currentStep === 'analysis') {
+      handleGoToStep('validation');
     }
   };
   
@@ -217,6 +367,21 @@ export function SkillAnalysis({ onBack }: SkillAnalysisProps) {
     setCompletedSteps(prev => {
       const newSet = new Set(prev);
       newSet.add('data');
+      return newSet;
+    });
+    
+    // 입력값 검증 단계로 이동하고 해당 패널만 펼침
+    setCurrentStep('validation');
+    setExpandedPanels(new Set(['validation']));
+  };
+
+  // 입력값 검증 완료 처리
+  const completeValidationStep = () => {
+    console.log('입력값 검증 완료, 현재 통합 데이터:', integratedData);
+    
+    setCompletedSteps(prev => {
+      const newSet = new Set(prev);
+      newSet.add('validation');
       return newSet;
     });
     
@@ -239,6 +404,11 @@ export function SkillAnalysis({ onBack }: SkillAnalysisProps) {
       return newSet;
     });
   };
+  
+  // 단계 완료 처리
+  const completeStep = useCallback((step: string, nextStep: string) => {
+    // ... existing code ...
+  }, []);
   
   return (
     <div className="skill-analysis">
@@ -269,14 +439,22 @@ export function SkillAnalysis({ onBack }: SkillAnalysisProps) {
             onClick={() => completedSteps.has('upload') && handleGoToStep('data')}
           >
             <div className="step-number">2</div>
-            <div className="step-label">데이터 확인</div>
+            <div className="step-label">업로드 데이터 확인</div>
+          </div>
+          <div className="step-connector"></div>
+          <div 
+            className={`step-item ${currentStep === 'validation' ? 'active' : ''} ${completedSteps.has('validation') ? 'completed' : ''}`}
+            onClick={() => completedSteps.has('data') && handleGoToStep('validation')}
+          >
+            <div className="step-number">3</div>
+            <div className="step-label">입력값 검증</div>
           </div>
           <div className="step-connector"></div>
           <div 
             className={`step-item ${currentStep === 'analysis' ? 'active' : ''} ${completedSteps.has('analysis') ? 'completed' : ''}`}
-            onClick={() => completedSteps.has('data') && handleGoToStep('analysis')}
+            onClick={() => completedSteps.has('validation') && handleGoToStep('analysis')}
           >
-            <div className="step-number">3</div>
+            <div className="step-number">4</div>
             <div className="step-label">분석 결과</div>
           </div>
         </div>
@@ -342,7 +520,7 @@ export function SkillAnalysis({ onBack }: SkillAnalysisProps) {
         {/* 데이터 확인 단계 */}
         <div className={`step-panel ${expandedPanels.has('data') ? 'expanded' : 'collapsed'}`}>
           <div className="panel-header" onClick={() => togglePanel('data')}>
-            <h2 className="step-title">Step 2. 데이터 확인</h2>
+            <h2 className="step-title">Step 2. 업로드 데이터 확인</h2>
             <button className="toggle-button">
               {expandedPanels.has('data') ? '접기' : '펼치기'}
             </button>
@@ -423,45 +601,43 @@ export function SkillAnalysis({ onBack }: SkillAnalysisProps) {
           </div>
         </div>
         
+        {/* 입력값 검증 단계 */}
+        <div className={`step-panel ${expandedPanels.has('validation') ? 'expanded' : 'collapsed'}`}>
+          <div className="panel-header" onClick={() => togglePanel('validation')}>
+            <h2 className="step-title">Step 3. 입력값 검증</h2>
+            <button className="toggle-button">
+              {expandedPanels.has('validation') ? '접기' : '펼치기'}
+            </button>
+          </div>
+          
+          <div className="panel-content">
+            <ValidationStep 
+              dataset={dataset}
+              integratedData={integratedData}
+              onPrev={() => handlePrev()}
+              onComplete={() => completeValidationStep()}
+              completedSteps={completedSteps}
+              onDataUpdate={handleDataUpdate}
+            />
+          </div>
+        </div>
+        
         {/* 분석 결과 단계 */}
         <div className={`step-panel ${expandedPanels.has('analysis') ? 'expanded' : 'collapsed'}`}>
           <div className="panel-header" onClick={() => togglePanel('analysis')}>
-            <h2 className="step-title">Step 3. 분석 결과</h2>
+            <h2 className="step-title">Step 4. 분석 결과</h2>
             <button className="toggle-button">
               {expandedPanels.has('analysis') ? '접기' : '펼치기'}
             </button>
           </div>
           
           <div className="panel-content">
-            {completedSteps.has('data') ? (
-              <div className="analysis-content">
-                <h3>스킬 분석 결과</h3>
-                <p>선택한 데이터에 대한 분석 결과입니다.</p>
-                
-                <div className="analysis-placeholder">
-                  <p>분석 결과가 여기에 표시됩니다.</p>
-                </div>
-                
-                <div className="step-navigation">
-                  <button 
-                    className="nav-button prev"
-                    onClick={handlePrev}
-                  >
-                    이전 단계
-                  </button>
-                </div>
-              </div>
-            ) : (
-              <div className="empty-state">
-                <p>먼저 데이터를 확인해주세요.</p>
-                <button 
-                  className="nav-button"
-                  onClick={() => handleGoToStep('data')}
-                >
-                  데이터 확인 단계로 이동
-                </button>
-              </div>
-            )}
+            <AnalysisStep 
+              dataset={dataset}
+              integratedData={integratedData}
+              onPrev={() => handlePrev()}
+              completedSteps={completedSteps}
+            />
           </div>
         </div>
       </div>

@@ -470,4 +470,360 @@
   .nav-button {
     width: 100%;
   }
+}
+
+/* 검증 영역 스타일 */
+.validation-content {
+  width: 100%;
+}
+
+.validation-content h3 {
+  font-size: 1.25rem;
+  color: #333;
+  margin-bottom: 0.75rem;
+}
+
+.validation-content p {
+  color: #666;
+  margin-bottom: 1.5rem;
+}
+
+.validation-area {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  background-color: #f9f9f9;
+  border-radius: 0.5rem;
+  padding: 1.5rem;
+}
+
+.validation-section {
+  background-color: white;
+  border-radius: 0.5rem;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  padding: 1rem;
+}
+
+.validation-title {
+  font-size: 1rem;
+  color: #333;
+  margin-bottom: 1rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 1px solid #eee;
+}
+
+.validation-items {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.validation-item {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.5rem;
+  border-radius: 0.25rem;
+}
+
+.validation-item.success {
+  background-color: rgba(76, 175, 80, 0.1);
+}
+
+.validation-item.warning {
+  background-color: rgba(255, 193, 7, 0.1);
+}
+
+.validation-item.error {
+  background-color: rgba(244, 67, 54, 0.1);
+}
+
+.validation-icon {
+  width: 1.5rem;
+  height: 1.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  font-weight: bold;
+}
+
+.validation-item.success .validation-icon {
+  background-color: #4CAF50;
+  color: white;
+}
+
+.validation-item.warning .validation-icon {
+  background-color: #FFC107;
+  color: #333;
+}
+
+.validation-item.error .validation-icon {
+  background-color: #F44336;
+  color: white;
+}
+
+.validation-text {
+  font-size: 0.875rem;
+  color: #333;
+}
+
+/* 분석 결과 스타일 */
+.analysis-summary {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  margin-bottom: 1.5rem;
+}
+
+.analysis-card {
+  background-color: white;
+  border-radius: 0.5rem;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  padding: 1.25rem;
+  border-top: 3px solid #4CAF50;
+}
+
+.analysis-card h4 {
+  font-size: 1.125rem;
+  color: #333;
+  margin-top: 0;
+  margin-bottom: 1rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 1px solid #eee;
+}
+
+.analysis-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.analysis-list li {
+  padding: 0.75rem 0;
+  border-bottom: 1px solid #f5f5f5;
+}
+
+.analysis-list li:last-child {
+  border-bottom: none;
+}
+
+.analysis-list li strong {
+  display: block;
+  margin-bottom: 0.5rem;
+  color: #333;
+}
+
+.level-indicator {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  font-size: 0.875rem;
+}
+
+.current-level {
+  color: #f44336;
+  font-weight: 500;
+}
+
+.expected-level {
+  color: #4CAF50;
+  font-weight: 500;
+}
+
+.level-gap {
+  background-color: #f9f9f9;
+  padding: 0.25rem 0.5rem;
+  border-radius: 0.25rem;
+  font-weight: 600;
+  color: #ff9800;
+}
+
+@media (min-width: 768px) {
+  .analysis-summary {
+    flex-direction: row;
+    flex-wrap: wrap;
+  }
+  
+  .analysis-card {
+    flex: 1 1 calc(50% - 0.75rem);
+    min-width: 300px;
+  }
+}
+
+/* 데이터 검증 그리드 스타일 */
+.skill-selector {
+  margin-bottom: 1.5rem;
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 1rem;
+}
+
+.validation-select {
+  padding: 0.5rem;
+  border-radius: 0.25rem;
+  border: 1px solid #ddd;
+  min-width: 250px;
+  font-size: 0.875rem;
+}
+
+.view-toggle {
+  display: flex;
+  border: 1px solid #e0e0e0;
+  border-radius: 0.25rem;
+  overflow: hidden;
+}
+
+.view-toggle .toggle-button {
+  padding: 0.5rem 1rem;
+  background: #f5f5f5;
+  border: none;
+  cursor: pointer;
+  font-size: 0.75rem;
+  color: #666;
+}
+
+.view-toggle .toggle-button.active {
+  background-color: #4CAF50;
+  color: white;
+}
+
+.validation-data-view {
+  margin-top: 1rem;
+  padding: 1rem;
+  background: #f9f9f9;
+  border-radius: 0.5rem;
+}
+
+.data-grid-container {
+  overflow-x: auto;
+}
+
+.validation-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.875rem;
+  background: white;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  border-radius: 0.25rem;
+  overflow: hidden;
+}
+
+.validation-table th, 
+.validation-table td {
+  border: 1px solid #eee;
+  padding: 0.75rem;
+  text-align: left;
+}
+
+.validation-table th {
+  background-color: #f0f0f0;
+  font-weight: 600;
+  color: #444;
+  cursor: pointer;
+  user-select: none;
+}
+
+.validation-table th:hover {
+  background-color: #e5e5e5;
+}
+
+.validation-table tbody tr:nth-child(even) {
+  background-color: #f9f9f9;
+}
+
+.validation-table tbody tr:hover {
+  background-color: #f0f7ff;
+}
+
+.validation-input {
+  width: 60px;
+  padding: 0.25rem;
+  border: 1px solid #ddd;
+  border-radius: 0.25rem;
+  text-align: center;
+}
+
+.validation-cell-positive {
+  color: #4CAF50;
+  font-weight: 600;
+}
+
+.validation-cell-negative {
+  color: #f44336;
+  font-weight: 600;
+}
+
+.validation-cell-neutral {
+  color: #666;
+}
+
+.grid-actions {
+  margin-top: 1rem;
+  display: flex;
+  justify-content: flex-end;
+}
+
+.action-button {
+  padding: 0.5rem 1rem;
+  border: none;
+  border-radius: 0.25rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.3s;
+}
+
+.action-button.save {
+  background-color: #4CAF50;
+  color: white;
+}
+
+.action-button.save:hover {
+  background-color: #45a049;
+}
+
+.chart-container {
+  background: white;
+  padding: 1rem;
+  border-radius: 0.5rem;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.chart-container h5 {
+  margin-top: 1rem;
+  margin-bottom: 1rem;
+  font-size: 1rem;
+  text-align: center;
+  color: #444;
+}
+
+.alert-message {
+  padding: 0.75rem 1rem;
+  margin-bottom: 1rem;
+  border-radius: 0.25rem;
+  font-size: 0.875rem;
+}
+
+.alert-message.success {
+  background-color: #e8f5e9;
+  border: 1px solid #c8e6c9;
+  color: #2e7d32;
+}
+
+.alert-message.error {
+  background-color: #ffebee;
+  border: 1px solid #ffcdd2;
+  color: #c62828;
+}
+
+@media (max-width: 768px) {
+  .skill-selector {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  
+  .validation-select {
+    width: 100%;
+  }
 } 
