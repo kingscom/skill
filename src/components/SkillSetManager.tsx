@@ -86,14 +86,20 @@ export const SkillSetManager: React.FC<SkillSetManagerProps> = ({ onBack }) => {
     utils.book_append_sheet(wb, teamWs, '팀');
     
     const allSkills = [
-      ...skillList.map(skill => ({ 
-        ...skill, 
-        구분: '주스킬'
-      })),
-      ...subSkillList.map(skill => ({ 
-        ...skill, 
-        구분: '멀티스킬'
-      }))
+      ...skillList.map(skill => {
+        const { 팀, 팀업무, 핵심기술, ...rest } = skill;
+        return { 
+          ...rest, 
+          구분: '주스킬'
+        };
+      }),
+      ...subSkillList.map(skill => {
+        const { 팀, 팀업무, 핵심기술, ...rest } = skill;
+        return { 
+          ...rest, 
+          구분: '멀티스킬'
+        };
+      })
     ];
     
     const skillWs = utils.json_to_sheet(allSkills, {
