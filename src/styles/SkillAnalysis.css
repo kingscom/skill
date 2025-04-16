@@ -826,4 +826,94 @@
   .validation-select {
     width: 100%;
   }
+}
+
+/* 데이터 분석 스타일 */
+.analysis-actions {
+  margin-bottom: 1rem;
+}
+
+.action-button.analysis {
+  background-color: #007bff;
+  color: white;
+  padding: 0.5rem 1rem;
+  border: none;
+  border-radius: 0.25rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.3s;
+}
+
+.action-button.analysis:hover {
+  background-color: #0069d9;
+}
+
+.analysis-results {
+  margin-top: 1.5rem;
+}
+
+.analysis-results h5 {
+  font-size: 1rem;
+  margin-bottom: 1rem;
+  color: #333;
+}
+
+.analysis-table {
+  overflow-x: auto;
+  margin-bottom: 1.5rem;
+}
+
+.analysis-table .data-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.analysis-table .data-table th,
+.analysis-table .data-table td {
+  padding: 0.75rem;
+  border: 1px solid #dee2e6;
+  text-align: left;
+  font-size: 0.875rem;
+}
+
+.analysis-table .data-table th {
+  background-color: #f8f9fa;
+  font-weight: 600;
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
+
+.analysis-table .data-table .warning-row {
+  background-color: #fff3cd;
+}
+
+.analysis-table .data-table .success-row {
+  background-color: #d4edda;
+}
+
+.analysis-table .data-table .details-cell {
+  max-width: 400px;
+  white-space: normal;
+  word-break: break-word;
+}
+
+.status-badge {
+  display: inline-block;
+  padding: 0.25rem 0.5rem;
+  border-radius: 0.25rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-align: center;
+  min-width: 60px;
+}
+
+.status-badge.warning {
+  background-color: #ffc107;
+  color: #212529;
+}
+
+.status-badge.success {
+  background-color: #28a745;
+  color: white;
 } 

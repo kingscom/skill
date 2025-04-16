@@ -270,16 +270,18 @@ export function SkillAnalysis({ onBack }: SkillAnalysisProps) {
           현재수준: '',
           기대수준: ''
         };
+
+        console.log('레벨 데이터:', i);
         
         // 인덱스에 따라 현재/기대 수준 필드 이름 결정
-        const currentLevelField = i === 0 ? '현재수준' : `현재수준${i+2}`;
-        const expectedLevelField = i === 0 ? '기대수준' : `기대수준${i+2}`;
+        const currentLevelField = i === 0 ? '현재수준' : `현재수준${i+1}`;
+        const expectedLevelField = i === 0 ? '기대수준' : `기대수준${i+1}`;
         
         // 레벨 데이터 가져오기
         data.현재수준 = level[currentLevelField] || '';
         data.기대수준 = level[expectedLevelField] || '';
         
-        console.log(`조직원 ${name} 스킬 ${skillKey} 데이터:`, data);
+        // console.log(`조직원 ${name} 스킬 ${skillKey} 데이터:`, data);
         
         // 유효한 키인 경우에만 조직리스트에 추가
         if (skillMap.has(skillKey)) {
