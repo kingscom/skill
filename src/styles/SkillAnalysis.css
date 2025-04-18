@@ -1,5 +1,5 @@
 .skill-analysis {
-  max-width: 1000px;
+  max-width: 1920px;
   width: 100%;
   margin: 0 auto;
   padding: 1rem;
@@ -39,9 +39,10 @@
 .skill-set-header {
   background: white;
   border-radius: 10px;
-  padding: 1.5rem;
+  padding: 2rem;
   margin-bottom: 2rem;
   box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+  width: 100%;
 }
 
 .skill-set-title {
@@ -71,7 +72,7 @@
   align-items: center;
   justify-content: space-between;
   position: relative;
-  max-width: 800px;
+  max-width: 1200px;
   margin-left: auto;
   margin-right: auto;
 }
@@ -191,7 +192,7 @@
 }
 
 .panel-content {
-  padding: 1.5rem;
+  padding: 2rem;
   background-color: white;
   transition: all 0.3s ease;
 }
@@ -369,6 +370,7 @@
   border-radius: 8px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
   overflow: hidden;
+  margin-bottom: 30px;
 }
 
 .sheet-name {
@@ -380,7 +382,7 @@
 }
 
 .sheet-preview {
-  padding: 1rem;
+  padding: 1.5rem;
   overflow-x: auto;
 }
 
@@ -388,12 +390,13 @@
   width: 100%;
   border-collapse: collapse;
   font-size: 0.875rem;
+  table-layout: auto;
 }
 
 .data-table th,
 .data-table td {
   border: 1px solid #eee;
-  padding: 0.5rem;
+  padding: 0.75rem 1rem;
   text-align: left;
 }
 
@@ -491,17 +494,17 @@
 .validation-area {
   display: flex;
   flex-direction: column;
-  gap: 1.5rem;
+  gap: 2rem;
   background-color: #f9f9f9;
   border-radius: 0.5rem;
-  padding: 1.5rem;
+  padding: 2rem;
 }
 
 .validation-section {
   background-color: white;
   border-radius: 0.5rem;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-  padding: 1rem;
+  padding: 1.5rem;
 }
 
 .validation-title {
@@ -714,7 +717,7 @@
 .validation-table td {
   border: 1px solid #eee;
   padding: 0.75rem;
-  text-align: left;
+  text-align: center;
 }
 
 .validation-table th {
@@ -723,6 +726,7 @@
   color: #444;
   cursor: pointer;
   user-select: none;
+  text-align: center;
 }
 
 .validation-table th:hover {
@@ -861,19 +865,23 @@
 .analysis-table {
   overflow-x: auto;
   margin-bottom: 1.5rem;
+  border-radius: 0.5rem;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
 }
 
 .analysis-table .data-table {
   width: 100%;
   border-collapse: collapse;
+  table-layout: auto;
 }
 
 .analysis-table .data-table th,
 .analysis-table .data-table td {
-  padding: 0.75rem;
+  padding: 0.75rem 1rem;
   border: 1px solid #dee2e6;
   text-align: left;
   font-size: 0.875rem;
+  vertical-align: top;
 }
 
 .analysis-table .data-table th {
@@ -893,8 +901,8 @@
 }
 
 .analysis-table .data-table .details-cell {
-  max-width: 400px;
-  white-space: normal;
+  max-width: 800px;
+  white-space: pre-line;
   word-break: break-word;
 }
 
@@ -916,4 +924,42 @@
 .status-badge.success {
   background-color: #28a745;
   color: white;
+}
+
+/* 반응형 디자인 조정 */
+@media (min-width: 1400px) {
+  .skill-analysis {
+    padding: 1.5rem;
+  }
+  
+  .skill-set-header {
+    padding: 2.5rem;
+  }
+  
+  .panel-content {
+    padding: 2.5rem;
+  }
+  
+  .data-table th,
+  .data-table td {
+    padding: 0.75rem 1rem;
+  }
+  
+  .validation-area {
+    padding: 2.5rem;
+    gap: 2.5rem;
+  }
+  
+  .validation-section {
+    padding: 2rem;
+  }
+  
+  .analysis-table .data-table th,
+  .analysis-table .data-table td {
+    padding: 1rem 1.25rem;
+  }
+  
+  .analysis-table .data-table .details-cell {
+    max-width: 800px;
+  }
 } 

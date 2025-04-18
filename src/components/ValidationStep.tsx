@@ -66,6 +66,67 @@ export const ValidationStep: React.FC<ValidationStepProps> = ({
   const [showAnalysis, setShowAnalysis] = useState<boolean>(false);
   const [analysisResults, setAnalysisResults] = useState<AnalysisResult[]>([]);
 
+  // 스킬 식별자와 인덱스를 매핑하는 함수 추가
+  const getSkillIndexByIdentifier = useCallback((identifier: string): number | null => {
+    if (!editedData || !identifier) return null;
+    
+    const [skillSet, requirement] = identifier.split('(');
+    const cleanRequirement = requirement ? requirement.replace(')', '') : '';
+    
+    const index = editedData.findIndex(skill => 
+      skill.스킬셋 === skillSet.trim() && 
+      skill.요구역량 === cleanRequirement.trim()
+    );
+    
+    return index >= 0 ? index : null;
+  }, [editedData]);
+
+  // 분석 결과에서 스킬을 선택하여 그리드로 이동하는 함수
+  const handleSelectSkillFromAnalysis = useCallback((skillIdentifier: string) => {
+    // "스킬셋(요구역량)" 형식에서 스킬 인덱스 찾기
+    const skillIndex = getSkillIndexByIdentifier(skillIdentifier);
+    
+    if (skillIndex !== null) {
+      setSelectedSkill(skillIndex);
+      setShowCharts(false); // 그리드 뷰로 전환
+      
+      // 분석 패널을 닫고 데이터 그리드 패널로 스크롤
+      const dataGridElement = document.querySelector('.skill-selector');
+      if (dataGridElement) {
+        dataGridElement.scrollIntoView({ behavior: 'smooth' });
+      }
+      
+      // 선택된 스킬 강조 표시
+      setTimeout(() => {
+        const skillSelectElement = document.getElementById('skill-select');
+        if (skillSelectElement) {
+          skillSelectElement.focus();
+        }
+      }, 500);
+
+      setAlertMessage(`"${skillIdentifier}" 스킬을 선택했습니다. 그리드에서 수정할 수 있습니다.`);
+      setTimeout(() => setAlertMessage(null), 3000);
+    }
+  }, [getSkillIndexByIdentifier]);
+
+  // 분석 결과의 상세 정보에서 스킬 식별자를 추출하는 함수
+  const extractSkillIdentifiers = useCallback((text: string): string[] => {
+    if (!text) return [];
+    
+    // 줄바꿈으로 분리하고 "스킬셋(요구역량)" 패턴을 찾음
+    const lines = text.split('\n');
+    const skillPatterns = lines
+      .filter(line => line.includes('(') && line.includes(')'))
+      .map(line => {
+        // "스킬셋(요구역량): 추가정보" 형식에서 "스킬셋(요구역량)" 부분만 추출
+        const match = line.match(/(.+?\(.+?\))/);
+        return match ? match[1] : null;
+      })
+      .filter(Boolean) as string[];
+    
+    return skillPatterns;
+  }, []);
+
   // integratedData가 변경될 때마다 editedData 업데이트
   useEffect(() => {
     if (integratedData && integratedData.length > 0) {
@@ -189,43 +250,52 @@ export const ValidationStep: React.FC<ValidationStepProps> = ({
       {
         Header: '이름',
         accessor: '이름' as keyof OrganizationMember,
+        Cell: ({ value }: { value: any }) => (
+          <div style={{ textAlign: 'center' }}>{value}</div>
+        ),
       },
       {
         Header: '현재수준',
         accessor: '현재수준' as keyof OrganizationMember,
         Cell: ({ row, value }: { row: TableRow; value: any }) => (
-          <input
-            type="number"
-            min="0"
-            max="5"
-            value={value !== undefined && value !== null ? value : ''}
-            onChange={(e) => handleDataChange(
-              selectedSkill as number, 
-              row.index, 
-              e.target.value === '' ? '' : Number(e.target.value), 
-              '현재수준'
-            )}
-            className="validation-input"
-          />
+          <div style={{ textAlign: 'center' }}>
+            <input
+              type="number"
+              min="0"
+              max="5"
+              value={value !== undefined && value !== null ? value : ''}
+              onChange={(e) => handleDataChange(
+                selectedSkill as number, 
+                row.index, 
+                e.target.value === '' ? '' : Number(e.target.value), 
+                '현재수준'
+              )}
+              className="validation-input"
+              style={{ textAlign: 'center' }}
+            />
+          </div>
         ),
       },
       {
         Header: '기대수준',
         accessor: '기대수준' as keyof OrganizationMember,
         Cell: ({ row, value }: { row: TableRow; value: any }) => (
-          <input
-            type="number"
-            min="0"
-            max="5"
-            value={value !== undefined && value !== null ? value : ''}
-            onChange={(e) => handleDataChange(
-              selectedSkill as number, 
-              row.index, 
-              e.target.value === '' ? '' : Number(e.target.value), 
-              '기대수준'
-            )}
-            className="validation-input"
-          />
+          <div style={{ textAlign: 'center' }}>
+            <input
+              type="number"
+              min="0"
+              max="5"
+              value={value !== undefined && value !== null ? value : ''}
+              onChange={(e) => handleDataChange(
+                selectedSkill as number, 
+                row.index, 
+                e.target.value === '' ? '' : Number(e.target.value), 
+                '기대수준'
+              )}
+              className="validation-input"
+              style={{ textAlign: 'center' }}
+            />
+          </div>
         ),
       },
       {
@@ -244,7 +314,7 @@ export const ValidationStep: React.FC<ValidationStepProps> = ({
               : 'validation-cell-neutral';
           
           return (
-            <div className={cellClass}>
+            <div className={cellClass} style={{ textAlign: 'center' }}>
               {value > 0 ? `+${value}` : value}
             </div>
           );
@@ -261,6 +331,43 @@ export const ValidationStep: React.FC<ValidationStepProps> = ({
       return selectedSkillData.조직리스트;
     }
     return [];
+  }, [selectedSkillData]);
+
+  // 리더를 제외한 평균값 계산
+  const teamAverages = useMemo(() => {
+    if (!selectedSkillData?.조직리스트) return null;
+    
+    // 리더가 아닌 구성원 필터링
+    const teamMembers = selectedSkillData.조직리스트.filter(
+      member => member.이름 !== '리더'
+    );
+    
+    if (teamMembers.length === 0) return null;
+    
+    // 현재수준과 기대수준의 평균 계산
+    const currentLevels = teamMembers
+      .map(member => Number(member.현재수준))
+      .filter(level => !isNaN(level));
+    
+    const expectedLevels = teamMembers
+      .map(member => Number(member.기대수준))
+      .filter(level => !isNaN(level));
+    
+    const avgCurrent = currentLevels.length > 0 
+      ? currentLevels.reduce((sum, level) => sum + level, 0) / currentLevels.length
+      : 0;
+    
+    const avgExpected = expectedLevels.length > 0
+      ? expectedLevels.reduce((sum, level) => sum + level, 0) / expectedLevels.length
+      : 0;
+    
+    const gap = avgExpected - avgCurrent;
+    
+    return {
+      avgCurrent: avgCurrent.toFixed(1),
+      avgExpected: avgExpected.toFixed(1),
+      gap: gap.toFixed(1)
+    };
   }, [selectedSkillData]);
 
   const {
@@ -362,8 +469,8 @@ export const ValidationStep: React.FC<ValidationStepProps> = ({
         title: '고정값 입력 의심',
         description: '모든 역량에 같은 점수를 입력한 응답',
         detected: true,
-        details: `${fixedValueSkills.length}개 스킬에서 고정값 입력 발견. 영향 받는 스킬: ${
-          fixedValueSkills.map(s => `${s.스킬셋}(${s.요구역량})`).join(', ')
+        details: `${fixedValueSkills.length}개 스킬에서 고정값 입력 발견.\n영향 받는 스킬:\n${
+          fixedValueSkills.map(s => `${s.스킬셋}(${s.요구역량})`).join('\n')
         }`
       });
     } else {
@@ -403,10 +510,10 @@ export const ValidationStep: React.FC<ValidationStepProps> = ({
         title: '자기기대 과도',
         description: '구성원이 스스로에게 매우 높은 기대치를 설정',
         detected: true,
-        details: `${highExpectationMembersCount}명의 구성원이 매우 높은 기대수준(4.8 이상)을 설정함. ${
+        details: `${highExpectationMembersCount}명의 구성원이 매우 높은 기대수준(4.8 이상)을 설정함.\n${
           Object.entries(highExpectationMembers)
             .map(([name, skills]) => `${name}: ${skills.length}개 스킬`)
-            .join(', ')
+            .join('\n')
         }`
       });
     } else {
@@ -450,15 +557,15 @@ export const ValidationStep: React.FC<ValidationStepProps> = ({
     
     if (leaderExpectationGapSkills.length > 0) {
       results.push({
-        id: '4',
+        id: '3',
         title: '리더-구성원 기대수준 차이',
         description: '같은 역량에 대해 리더와 구성원의 기대 수준이 크게 다름',
         detected: true,
-        details: `${leaderExpectationGapSkills.length}개 역량에서 리더와 구성원 간 기대수준 차이가 큼. ${leaderExpectationGapSkills.join(', ')}`
+        details: `${leaderExpectationGapSkills.length}개 역량에서 리더와 구성원 간 기대수준 차이가 큼.\n${leaderExpectationGapSkills.join('\n')}`
       });
     } else {
       results.push({
-        id: '4',
+        id: '3',
         title: '리더-구성원 기대수준 차이',
         description: '같은 역량에 대해 리더와 구성원의 기대 수준이 크게 다름',
         detected: false,
@@ -492,15 +599,15 @@ export const ValidationStep: React.FC<ValidationStepProps> = ({
     
     if (extremeValueSkills.length > 0) {
       results.push({
-        id: '5',
+        id: '4',
         title: '극단값 포함',
         description: '현재수준 또는 기대수준이 1점, 5점처럼 극단값에 몰려 있음',
         detected: true,
-        details: `${extremeValueSkills.length}개 역량에서 극단값이 많음. ${extremeValueSkills.join(', ')}`
+        details: `${extremeValueSkills.length}개 역량에서 극단값이 많음.\n${extremeValueSkills.join('\n')}`
       });
     } else {
       results.push({
-        id: '5',
+        id: '4',
         title: '극단값 포함',
         description: '현재수준 또는 기대수준이 1점, 5점처럼 극단값에 몰려 있음',
         detected: false,
@@ -535,15 +642,15 @@ export const ValidationStep: React.FC<ValidationStepProps> = ({
     
     if (highVarianceSkills.length > 0) {
       results.push({
-        id: '6',
+        id: '5',
         title: '기대수준 분산 과도',
         description: '동일 직무 또는 팀에서 기대수준이 지나치게 다양',
         detected: true,
-        details: `${highVarianceSkills.length}개 역량에서 기대수준 범위가 넓음. ${highVarianceSkills.join(', ')}`
+        details: `${highVarianceSkills.length}개 역량에서 기대수준 범위가 넓음.\n${highVarianceSkills.join('\n')}`
       });
     } else {
       results.push({
-        id: '6',
+        id: '5',
         title: '기대수준 분산 과도',
         description: '동일 직무 또는 팀에서 기대수준이 지나치게 다양',
         detected: false,
@@ -581,15 +688,15 @@ export const ValidationStep: React.FC<ValidationStepProps> = ({
     
     if (highStdDevSkills.length > 0) {
       results.push({
-        id: '8',
+        id: '6',
         title: '팀 내 현재수준 편차 큼',
         description: '한 팀 구성원들의 현재수준 편차가 과도함',
         detected: true,
-        details: `${highStdDevSkills.length}개 역량에서 현재수준 표준편차가 큼. ${highStdDevSkills.join(', ')}`
+        details: `${highStdDevSkills.length}개 역량에서 현재수준 표준편차가 큼.\n${highStdDevSkills.join('\n')}`
       });
     } else {
       results.push({
-        id: '8',
+        id: '6',
         title: '팀 내 현재수준 편차 큼',
         description: '한 팀 구성원들의 현재수준 편차가 과도함',
         detected: false,
@@ -601,7 +708,7 @@ export const ValidationStep: React.FC<ValidationStepProps> = ({
     // (이미 결측치 확인 부분이 구현되어 있음)
     if (hasMissingOrganizationData) {
       results.push({
-        id: '9',
+        id: '7',
         title: '응답 불균형 (결측 포함)',
         description: '특정 역량에 응답 누락 또는 일부만 응답',
         detected: true,
@@ -609,7 +716,7 @@ export const ValidationStep: React.FC<ValidationStepProps> = ({
       });
     } else {
       results.push({
-        id: '9',
+        id: '7',
         title: '응답 불균형 (결측 포함)',
         description: '특정 역량에 응답 누락 또는 일부만 응답',
         detected: false,
@@ -658,15 +765,15 @@ export const ValidationStep: React.FC<ValidationStepProps> = ({
     
     if (gapDifferenceSkills.length > 0) {
       results.push({
-        id: '10',
+        id: '8',
         title: '리더 vs 구성원 GAP 차이',
         description: '구성원이 기대하는 GAP과 리더 기대 GAP 차이 큼',
         detected: true,
-        details: `${gapDifferenceSkills.length}개 역량에서 리더와 구성원의 GAP 차이가 큼. ${gapDifferenceSkills.join(', ')}`
+        details: `${gapDifferenceSkills.length}개 역량에서 리더와 구성원의 GAP 차이가 큼.\n${gapDifferenceSkills.join('\n')}`
       });
     } else {
       results.push({
-        id: '10',
+        id: '8',
         title: '리더 vs 구성원 GAP 차이',
         description: '구성원이 기대하는 GAP과 리더 기대 GAP 차이 큼',
         detected: false,
@@ -674,57 +781,42 @@ export const ValidationStep: React.FC<ValidationStepProps> = ({
       });
     }
     
-    // ⑫ GAP 방향 반전
-    const reversedGapSkills: string[] = [];
+    // ⑪ 기대값 현재값 역전
+    const reversedExpectationSkills: string[] = [];
     
     editedData.forEach(skill => {
-      if (!skill.조직리스트 || skill.조직리스트.length <= 1) return;
+      if (!skill.조직리스트) return;
       
-      // 리더 멤버 찾기
-      const leaderMember = skill.조직리스트.find(m => m.이름 === '리더');
-      if (!leaderMember) return;
+      // 기대수준이 현재수준보다 낮은 멤버 찾기
+      const membersWithReversedExpectation = skill.조직리스트.filter(member => {
+        const current = Number(member.현재수준);
+        const expected = Number(member.기대수준);
+        
+        return !isNaN(current) && !isNaN(expected) && expected < current;
+      });
       
-      // 리더의 GAP 계산
-      const leaderCurrent = Number(leaderMember.현재수준);
-      const leaderExpected = Number(leaderMember.기대수준);
-      
-      if (isNaN(leaderCurrent) || isNaN(leaderExpected)) return;
-      
-      const leaderGap = leaderExpected - leaderCurrent;
-      
-      // 리더 GAP이 작은 경우 건너뜀
-      if (leaderGap < 1.0) return;
-      
-      // 구성원들 중 GAP이 매우 작거나 음수인 구성원 확인
-      const lowGapMembers = skill.조직리스트
-        .filter(m => m.이름 !== '리더')
-        .filter(m => {
-          const current = Number(m.현재수준);
-          const expected = Number(m.기대수준);
-          if (isNaN(current) || isNaN(expected)) return false;
-          
-          const gap = expected - current;
-          return gap <= 0.3; // 0.3 이하인 경우 (방향 반전이거나 매우 작은 GAP)
-        });
-      
-      if (lowGapMembers.length > 0) {
-        reversedGapSkills.push(`${skill.스킬셋}(${skill.요구역량}): 리더 GAP ${leaderGap.toFixed(1)} vs ${lowGapMembers.length}명 구성원 GAP ≤0.3`);
+      if (membersWithReversedExpectation.length > 0) {
+        const memberNames = membersWithReversedExpectation
+          .map(m => `${m.이름}(현재:${m.현재수준} > 기대:${m.기대수준})`)
+          .join(', ');
+        
+        reversedExpectationSkills.push(`${skill.스킬셋}(${skill.요구역량}): ${membersWithReversedExpectation.length}명 - ${memberNames}`);
       }
     });
     
-    if (reversedGapSkills.length > 0) {
+    if (reversedExpectationSkills.length > 0) {
       results.push({
-        id: '12',
-        title: 'GAP 방향 반전',
-        description: '리더는 GAP이 크다고 보지만 구성원은 작다고 응답',
+        id: '10',
+        title: '기대값 현재값 역전',
+        description: '기대수준이 현재수준보다 낮습니다',
         detected: true,
-        details: `${reversedGapSkills.length}개 역량에서 GAP 방향 반전 발견. ${reversedGapSkills.join(', ')}`
+        details: `${reversedExpectationSkills.length}개 역량에서 기대수준이 현재수준보다 낮은 멤버가 있습니다.\n${reversedExpectationSkills.join('\n')}`
       });
     } else {
       results.push({
-        id: '12',
-        title: 'GAP 방향 반전',
-        description: '리더는 GAP이 크다고 보지만 구성원은 작다고 응답',
+        id: '10',
+        title: '기대수준<현재수준',
+        description: '기대수준이 현재수준 보다 낮습니다',
         detected: false,
         details: '문제 없음'
       });
@@ -733,6 +825,54 @@ export const ValidationStep: React.FC<ValidationStepProps> = ({
     setAnalysisResults(results);
     setShowAnalysis(true);
   }, [editedData, hasMissingOrganizationData, setAlertMessage]);
+
+  // 분석 결과 상세 정보 셀에 클릭 이벤트 추가
+  const renderDetailsCell = useCallback((details: string) => {
+    const skillIdentifiers = extractSkillIdentifiers(details);
+    
+    if (skillIdentifiers.length === 0) {
+      return details;
+    }
+    
+    // 줄바꿈을 기준으로 텍스트 분할
+    const lines = details.split('\n');
+    
+    return (
+      <>
+        {lines.map((line, index) => {
+          // 스킬 식별자를 포함하는 줄에 클릭 이벤트 추가
+          const matchedSkill = skillIdentifiers.find(skill => line.includes(skill));
+          
+          if (matchedSkill) {
+            return (
+              <div key={index}>
+                {line.split(matchedSkill).map((part, partIndex, array) => (
+                  <React.Fragment key={`${index}-${partIndex}`}>
+                    {part}
+                    {partIndex < array.length - 1 && (
+                      <span 
+                        onClick={() => handleSelectSkillFromAnalysis(matchedSkill)}
+                        style={{ 
+                          cursor: 'pointer', 
+                          color: '#007bff',
+                          textDecoration: 'underline',
+                          fontWeight: 'bold' 
+                        }}
+                      >
+                        {matchedSkill}
+                      </span>
+                    )}
+                  </React.Fragment>
+                ))}
+              </div>
+            );
+          }
+          
+          return <div key={index}>{line}</div>;
+        })}
+      </>
+    );
+  }, [extractSkillIdentifiers, handleSelectSkillFromAnalysis]);
 
   return (
     <>
@@ -857,6 +997,35 @@ export const ValidationStep: React.FC<ValidationStepProps> = ({
                                   </tr>
                                 );
                               })}
+                              
+                              {/* 리더 제외 평균값 행 추가 */}
+                              {teamAverages && (
+                                <tr style={{ 
+                                  backgroundColor: '#e8f5e9', 
+                                  fontWeight: 'bold',
+                                  borderTop: '2px solid #4CAF50'
+                                }}>
+                                  <td style={{ textAlign: 'center' }}>
+                                    리더 제외 평균
+                                  </td>
+                                  <td style={{ textAlign: 'center' }}>
+                                    {teamAverages.avgCurrent}
+                                  </td>
+                                  <td style={{ textAlign: 'center' }}>
+                                    {teamAverages.avgExpected}
+                                  </td>
+                                  <td style={{ 
+                                    textAlign: 'center',
+                                    color: Number(teamAverages.gap) > 0 
+                                      ? '#4CAF50' 
+                                      : Number(teamAverages.gap) < 0 
+                                        ? '#F44336' 
+                                        : '#666' 
+                                  }}>
+                                    {Number(teamAverages.gap) > 0 ? `+${teamAverages.gap}` : teamAverages.gap}
+                                  </td>
+                                </tr>
+                              )}
                             </tbody>
                           </table>
                           
@@ -982,7 +1151,9 @@ export const ValidationStep: React.FC<ValidationStepProps> = ({
                                 {result.detected ? '주의' : '정상'}
                               </span>
                             </td>
-                            <td className="details-cell">{result.details}</td>
+                            <td className="details-cell">
+                              {result.detected ? renderDetailsCell(result.details) : result.details}
+                            </td>
                           </tr>
                         ))}
                       </tbody>
