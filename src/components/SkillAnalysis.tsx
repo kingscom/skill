@@ -3,6 +3,7 @@ import '../styles/SkillAnalysis.css'
 import * as XLSX from 'xlsx'
 import { ValidationStep } from './ValidationStep'
 import { AnalysisStep } from './AnalysisStep'
+import { AnalysisResultStep } from './AnalysisResultStep'
 
 interface SkillAnalysisProps {
   onBack: () => void
@@ -634,8 +635,7 @@ export function SkillAnalysis({ onBack }: SkillAnalysisProps) {
           </div>
           
           <div className="panel-content">
-            <AnalysisStep 
-              dataset={dataset}
+            <AnalysisResultStep 
               integratedData={integratedData}
               onPrev={() => handlePrev()}
               completedSteps={completedSteps}

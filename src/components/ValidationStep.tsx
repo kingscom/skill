@@ -807,7 +807,7 @@ export const ValidationStep: React.FC<ValidationStepProps> = ({
     if (reversedExpectationSkills.length > 0) {
       results.push({
         id: '10',
-        title: '기대값 현재값 역전',
+        title: '기대수준<현재수준',
         description: '기대수준이 현재수준보다 낮습니다',
         detected: true,
         details: `${reversedExpectationSkills.length}개 역량에서 기대수준이 현재수준보다 낮은 멤버가 있습니다.\n${reversedExpectationSkills.join('\n')}`
