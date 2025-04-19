@@ -62,7 +62,7 @@ export const ValidationStep: React.FC<ValidationStepProps> = ({
   const [editedData, setEditedData] = useState<SkillData[]>(integratedData);
   const [selectedSkill, setSelectedSkill] = useState<number | null>(null);
   const [alertMessage, setAlertMessage] = useState<string | null>(null);
-  const [showCharts, setShowCharts] = useState<boolean>(true);
+  const [showCharts, setShowCharts] = useState<boolean>(false);
   const [showAnalysis, setShowAnalysis] = useState<boolean>(false);
   const [analysisResults, setAnalysisResults] = useState<AnalysisResult[]>([]);
 
@@ -961,6 +961,7 @@ export const ValidationStep: React.FC<ValidationStepProps> = ({
                 </div>
               </div>
               
+              {/* 유효한 데이터 뷰 영역 */}
               {selectedSkill !== null && (
                 <div className="validation-data-view">
                   {!showCharts ? (
@@ -1045,51 +1046,54 @@ export const ValidationStep: React.FC<ValidationStepProps> = ({
                       )}
                     </div>
                   ) : (
-                    <div className="chart-container">
+                    <div className="chart-container" style={{ width: '100%', overflowX: 'auto' }}>
                       {chartData.length > 0 ? (
-                        <>
-                          <h5>조직원 현재/기대 수준 비교</h5>
+                        <div style={{ display: 'flex', flexDirection: 'row', gap: '2rem', justifyContent: 'space-between', width: '100%' }}>
+                          <div style={{ flex: '1', minWidth: '48%', maxWidth: '48%' }}>
+                            <h5>조직원 현재/기대 수준 비교</h5>
+                            <ResponsiveContainer width="100%" height={300}>
+                              <BarChart
+                                data={chartData}
+                                margin={{
+                                  top: 20,
+                                  right: 30,
+                                  left: 20,
+                                  bottom: 30,
+                                }}
+                              >
+                                <CartesianGrid strokeDasharray="3 3" />
+                                <XAxis dataKey="name" />
+                                <YAxis domain={[0, 5]} />
+                                <Tooltip />
+                                <Legend />
+                                <Bar dataKey="현재수준" fill="#8884d8" name="현재수준" />
+                                <Bar dataKey="기대수준" fill="#82ca9d" name="기대수준" />
+                              </BarChart>
+                            </ResponsiveContainer>
+                          </div>
                           
-                          <ResponsiveContainer width="100%" height={300}>
-                            <BarChart
-                              data={chartData}
-                              margin={{
-                                top: 20,
-                                right: 30,
-                                left: 20,
-                                bottom: 30,
-                              }}
-                            >
-                              <CartesianGrid strokeDasharray="3 3" />
-                              <XAxis dataKey="name" />
-                              <YAxis domain={[0, 5]} />
-                              <Tooltip />
-                              <Legend />
-                              <Bar dataKey="현재수준" fill="#8884d8" name="현재수준" />
-                              <Bar dataKey="기대수준" fill="#82ca9d" name="기대수준" />
-                            </BarChart>
-                          </ResponsiveContainer>
-                          
-                          <h5>조직원 수준 차이 분석</h5>
-                          <ResponsiveContainer width="100%" height={300}>
-                            <BarChart
-                              data={chartData}
-                              margin={{
-                                top: 20,
-                                right: 30,
-                                left: 20,
-                                bottom: 30,
-                              }}
-                            >
-                              <CartesianGrid strokeDasharray="3 3" />
-                              <XAxis dataKey="name" />
-                              <YAxis domain={[-5, 5]} />
-                              <Tooltip />
-                              <Legend />
-                              <Bar dataKey="차이" fill={chartData.some(d => d.차이 < 0) ? "#ff7300" : "#00C49F"} name="수준 차이" />
-                            </BarChart>
-                          </ResponsiveContainer>
-                        </>
+                          <div style={{ flex: '1', minWidth: '48%', maxWidth: '48%' }}>
+                            <h5>조직원 수준 차이 분석</h5>
+                            <ResponsiveContainer width="100%" height={300}>
+                              <BarChart
+                                data={chartData}
+                                margin={{
+                                  top: 20,
+                                  right: 30,
+                                  left: 20,
+                                  bottom: 30,
+                                }}
+                              >
+                                <CartesianGrid strokeDasharray="3 3" />
+                                <XAxis dataKey="name" />
+                                <YAxis domain={[-5, 5]} />
+                                <Tooltip />
+                                <Legend />
+                                <Bar dataKey="차이" fill={chartData.some(d => d.차이 < 0) ? "#ff7300" : "#00C49F"} name="수준 차이" />
+                              </BarChart>
+                            </ResponsiveContainer>
+                          </div>
+                        </div>
                       ) : (
                         <div className="empty-chart-message">
                           <p>차트를 표시할 데이터가 없습니다.</p>

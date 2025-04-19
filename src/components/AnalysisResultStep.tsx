@@ -11,6 +11,8 @@ interface AnalysisResultStepProps {
 // 분석 결과 아이템 인터페이스
 interface AnalysisResultItem {
   skillName: string;
+  skillSet: string; // 스킬셋 분리
+  requiredCompetency: string; // 요구역량 분리
   currentLevel: number;
   expectedLevel: number;
   gap: number;
@@ -38,7 +40,7 @@ export const AnalysisResultStep: React.FC<AnalysisResultStepProps> = ({
     avgGap: 0,
     avgBorich: 0
   });
-  const [chartSize, setChartSize] = useState({ width: 500, height: 400 });
+  const [chartSize, setChartSize] = useState({ width: 560, height: 400 });
   const chartContainerRef = useRef<HTMLDivElement>(null);
   const [tooltip, setTooltip] = useState<{
     visible: boolean;
@@ -50,6 +52,15 @@ export const AnalysisResultStep: React.FC<AnalysisResultStepProps> = ({
     x: 0,
     y: 0,
     content: ''
+  });
+  
+  // 정렬 상태 추가
+  const [sortConfig, setSortConfig] = useState<{
+    key: keyof AnalysisResultItem | null;
+    direction: 'ascending' | 'descending';
+  }>({
+    key: null,
+    direction: 'ascending'
   });
   
   // 컴포넌트 마운트시 자동으로 분석 실행
@@ -66,20 +77,13 @@ export const AnalysisResultStep: React.FC<AnalysisResultStepProps> = ({
   
   // 컴포넌트 마운트 및 리사이즈 시 차트 크기 조정
   useEffect(() => {
-    const updateChartSize = () => {
-      if (chartContainerRef.current) {
-        const containerWidth = chartContainerRef.current.offsetWidth;
-        setChartSize({
-          width: Math.max(containerWidth * 0.95, 300),
-          height: 400
-        });
-      }
-    };
+    // 차트 사이즈를 고정값으로 설정
+    setChartSize({
+      width: 560,
+      height: 400
+    });
     
-    updateChartSize();
-    window.addEventListener('resize', updateChartSize);
-    
-    return () => window.removeEventListener('resize', updateChartSize);
+    // 리사이즈 이벤트 제거 (고정 사이즈 사용)
   }, []);
   
   // Borich 요구도 분석 함수
@@ -113,10 +117,21 @@ export const AnalysisResultStep: React.FC<AnalysisResultStepProps> = ({
       const tValue = calculateTValue(currentLevels, expectedLevels);
       
       // Borich 요구도 계산 (중요도 × 차이)
-      const borichValue = avgExpected * gap;
+      const sumOfGaps = teamMembers.reduce((sum, member) => {
+        const current = Number(member.현재수준);
+        const expected = Number(member.기대수준);
+        if (!isNaN(current) && !isNaN(expected)) {
+          return sum + (expected - current);
+        }
+        return sum;
+      }, 0);
+      
+      const borichValue = (sumOfGaps * avgExpected) / teamMembers.length;
       
       return {
         skillName: `${skill.스킬셋}(${skill.요구역량})`,
+        skillSet: skill.스킬셋, // 스킬셋만 별도로 저장
+        requiredCompetency: skill.요구역량, // 요구역량만 별도로 저장
         currentLevel: parseFloat(avgCurrent.toFixed(2)),
         expectedLevel: parseFloat(avgExpected.toFixed(2)),
         gap: parseFloat(gap.toFixed(2)),
@@ -190,6 +205,53 @@ export const AnalysisResultStep: React.FC<AnalysisResultStepProps> = ({
     return scaledTValue > 0 ? Math.min(scaledTValue, 10) : 0;
   };
   
+  // 정렬 함수 추가
+  const requestSort = (key: keyof AnalysisResultItem) => {
+    let direction: 'ascending' | 'descending' = 'ascending';
+    
+    // 같은 컬럼을 다시 클릭하면 방향 전환
+    if (sortConfig.key === key && sortConfig.direction === 'ascending') {
+      direction = 'descending';
+    }
+    
+    setSortConfig({ key, direction });
+  };
+  
+  // 정렬된 데이터 가져오기
+  const getSortedData = () => {
+    if (!sortConfig.key) return analysisData;
+    
+    const sortableData = [...analysisData];
+    
+    return sortableData.sort((a, b) => {
+      if (a[sortConfig.key!] === null) return 1;
+      if (b[sortConfig.key!] === null) return -1;
+      
+      if (a[sortConfig.key!] < b[sortConfig.key!]) {
+        return sortConfig.direction === 'ascending' ? -1 : 1;
+      }
+      if (a[sortConfig.key!] > b[sortConfig.key!]) {
+        return sortConfig.direction === 'ascending' ? 1 : -1;
+      }
+      return 0;
+    });
+  };
+  
+  // 헤더에 정렬 방향 표시 함수
+  const getSortDirection = (key: keyof AnalysisResultItem) => {
+    if (sortConfig.key !== key) return '';
+    return sortConfig.direction === 'ascending' ? ' ▲' : ' ▼';
+  };
+  
+  // 헤더 클릭 스타일
+  const getHeaderStyle = (key: keyof AnalysisResultItem) => {
+    return {
+      cursor: 'pointer',
+      backgroundColor: sortConfig.key === key ? '#f0f0f0' : 'transparent',
+      padding: '0.75rem'
+    };
+  };
+  
   // 차트 렌더링 함수
   const renderChart = (chartType: 'gap' | 'borich') => {
     if (!analysisData.length) return null;
@@ -223,6 +285,16 @@ export const AnalysisResultStep: React.FC<AnalysisResultStepProps> = ({
     const xAxisPos = yScale(avgMetric);
     const yAxisPos = xScale(avgExpectedLevel);
     
+    // 눈금 생성을 위한 값 계산
+    const xTicks = 5; // x축 눈금 수
+    const yTicks = 5; // y축 눈금 수
+    const xTickValues = Array.from({ length: xTicks + 1 }, (_, i) => 
+      parseFloat((xMin + (xMax - xMin) * (i / xTicks)).toFixed(2))
+    );
+    const yTickValues = Array.from({ length: yTicks + 1 }, (_, i) => 
+      parseFloat((yMin + (yMax - yMin) * (i / yTicks)).toFixed(2))
+    );
+    
     // 사분면 레이블 위치
     const quadrantLabels = [
       { label: 'HH 영역', x: yAxisPos + chartWidth * 0.25, y: xAxisPos - chartHeight * 0.25 },
@@ -235,7 +307,8 @@ export const AnalysisResultStep: React.FC<AnalysisResultStepProps> = ({
     const showTooltip = (item: AnalysisResultItem, x: number, y: number) => {
       const metric = chartType === 'gap' ? item.gap : item.borichValue;
       const content = `
-        ${item.skillName}
+        ${item.requiredCompetency}
+        -----------------
         현재수준: ${item.currentLevel.toFixed(2)}
         기대수준: ${item.expectedLevel.toFixed(2)}
         ${chartType === 'gap' ? 'GAP' : 'Borich'}: ${metric.toFixed(2)}
@@ -255,7 +328,7 @@ export const AnalysisResultStep: React.FC<AnalysisResultStepProps> = ({
     };
     
     return (
-      <div className="ipa-chart" style={{ position: 'relative' }}>
+      <div className="ipa-chart" style={{ position: 'relative', width: '560px', height: '400px' }}>
         <h4 className="chart-title">
           {chartType === 'gap' 
             ? '요구역량-GAP 2x2 메트릭스' 
@@ -288,6 +361,34 @@ export const AnalysisResultStep: React.FC<AnalysisResultStepProps> = ({
                 width={chartWidth} height={chartHeight} 
                 fill="#f8f9fa" stroke="#dee2e6" />
                 
+          {/* x축 그리드 라인 */}
+          {xTickValues.map((tick, i) => (
+            <line 
+              key={`xgrid-${i}`}
+              x1={xScale(tick)} 
+              x2={xScale(tick)} 
+              y1={padding.top} 
+              y2={padding.top + chartHeight}
+              stroke="#e9ecef" 
+              strokeWidth="1"
+              strokeDasharray={i > 0 && i < xTickValues.length - 1 ? "3,3" : "none"}
+            />
+          ))}
+          
+          {/* y축 그리드 라인 */}
+          {yTickValues.map((tick, i) => (
+            <line 
+              key={`ygrid-${i}`}
+              x1={padding.left} 
+              x2={padding.left + chartWidth} 
+              y1={yScale(tick)} 
+              y2={yScale(tick)}
+              stroke="#e9ecef" 
+              strokeWidth="1"
+              strokeDasharray={i > 0 && i < yTickValues.length - 1 ? "3,3" : "none"}
+            />
+          ))}
+          
           {/* 사분면 구분선 */}
           <line x1={padding.left} x2={padding.left + chartWidth} 
                 y1={xAxisPos} y2={xAxisPos} 
@@ -360,6 +461,29 @@ export const AnalysisResultStep: React.FC<AnalysisResultStepProps> = ({
             stroke="#495057" 
             strokeWidth="1" 
           />
+          
+          {/* X축 눈금 및 라벨 */}
+          {xTickValues.map((tick, i) => (
+            <g key={`xtick-${i}`}>
+              <line 
+                x1={xScale(tick)} 
+                x2={xScale(tick)} 
+                y1={padding.top + chartHeight} 
+                y2={padding.top + chartHeight + 5} 
+                stroke="#495057" 
+                strokeWidth="1" 
+              />
+              <text 
+                x={xScale(tick)} 
+                y={padding.top + chartHeight + 15} 
+                fontSize="10" 
+                fill="#495057" 
+                textAnchor="middle">
+                {tick.toFixed(1)}
+              </text>
+            </g>
+          ))}
+          
           <text 
             x={padding.left + chartWidth / 2} 
             y={padding.top + chartHeight + 35} 
@@ -378,6 +502,30 @@ export const AnalysisResultStep: React.FC<AnalysisResultStepProps> = ({
             stroke="#495057" 
             strokeWidth="1" 
           />
+          
+          {/* Y축 눈금 및 라벨 */}
+          {yTickValues.map((tick, i) => (
+            <g key={`ytick-${i}`}>
+              <line 
+                x1={padding.left - 5} 
+                x2={padding.left} 
+                y1={yScale(tick)} 
+                y2={yScale(tick)} 
+                stroke="#495057" 
+                strokeWidth="1" 
+              />
+              <text 
+                x={padding.left - 10} 
+                y={yScale(tick)} 
+                fontSize="10" 
+                fill="#495057" 
+                textAnchor="end"
+                dominantBaseline="middle">
+                {tick.toFixed(1)}
+              </text>
+            </g>
+          ))}
+          
           <text 
             x={padding.left - 40} 
             y={padding.top + chartHeight / 2} 
@@ -388,13 +536,31 @@ export const AnalysisResultStep: React.FC<AnalysisResultStepProps> = ({
             {yLabel}
           </text>
           
+          {/* 평균값 표시 */}
+          <text 
+            x={yAxisPos + 5} 
+            y={padding.top + 12} 
+            fontSize="10" 
+            fill="#495057"
+            textAnchor="start">
+            평균: {avgExpectedLevel.toFixed(2)}
+          </text>
+          <text 
+            x={padding.left + 5} 
+            y={xAxisPos - 5} 
+            fontSize="10" 
+            fill="#495057"
+            textAnchor="start">
+            평균: {avgMetric.toFixed(2)}
+          </text>
+          
           {/* 스킬셋 색인 */}
           <text 
             x={padding.left + 10} 
             y={padding.top + 20} 
             fontSize="10" 
             fill="#495057">
-            * 마우스를 포인트 위에 올리면 상세 정보가 표시됩니다
+            * 차트의 숫자는 위항목의 스킬셋입니다.
           </text>
         </svg>
       </div>
@@ -404,7 +570,7 @@ export const AnalysisResultStep: React.FC<AnalysisResultStepProps> = ({
   return (
     <div className="analysis-content">
       <h3>요구도 분석 결과</h3>
-      <p>IPA, Borich, The Locus for Focus 방법론을 활용한 스킬 요구도 분석 결과입니다. (리더 제외)</p>
+      <p>IPA, Borich, The Locus for Focus 방법론을 활용한 스킬 요구도 분석 결과입니다. (리더값 제외)</p>
       
       {isLoading ? (
         <div className="loading-indicator">
@@ -422,21 +588,41 @@ export const AnalysisResultStep: React.FC<AnalysisResultStepProps> = ({
                   <thead>
                     <tr>
                       <th style={{ width: '40px' }}>No.</th>
-                      <th>스킬셋(요구역량)</th>
-                      <th>현재수준 평균</th>
-                      <th>기대수준 평균</th>
-                      <th>gap</th>
-                      <th>우선순위</th>
-                      <th>t-value</th>
-                      <th>borich 요구도</th>
-                      <th>우선 순위</th>
+                      <th style={getHeaderStyle('skillSet')} onClick={() => requestSort('skillSet')}>
+                        스킬셋{getSortDirection('skillSet')}
+                      </th>
+                      <th style={getHeaderStyle('requiredCompetency')} onClick={() => requestSort('requiredCompetency')}>
+                        요구역량{getSortDirection('requiredCompetency')}
+                      </th>
+                      <th style={getHeaderStyle('currentLevel')} onClick={() => requestSort('currentLevel')}>
+                        현재수준 평균{getSortDirection('currentLevel')}
+                      </th>
+                      <th style={getHeaderStyle('expectedLevel')} onClick={() => requestSort('expectedLevel')}>
+                        기대수준 평균{getSortDirection('expectedLevel')}
+                      </th>
+                      <th style={getHeaderStyle('gap')} onClick={() => requestSort('gap')}>
+                        gap{getSortDirection('gap')}
+                      </th>
+                      <th style={getHeaderStyle('gapRank')} onClick={() => requestSort('gapRank')}>
+                        우선순위{getSortDirection('gapRank')}
+                      </th>
+                      <th style={getHeaderStyle('tValue')} onClick={() => requestSort('tValue')}>
+                        t-value{getSortDirection('tValue')}
+                      </th>
+                      <th style={getHeaderStyle('borichValue')} onClick={() => requestSort('borichValue')}>
+                        borich 요구도{getSortDirection('borichValue')}
+                      </th>
+                      <th style={getHeaderStyle('borichRank')} onClick={() => requestSort('borichRank')}>
+                        우선 순위{getSortDirection('borichRank')}
+                      </th>
                     </tr>
                   </thead>
                   <tbody>
-                    {analysisData.map((item, index) => (
+                    {getSortedData().map((item, index) => (
                       <tr key={index}>
                         <td>{index + 1}</td>
-                        <td>{item.skillName}</td>
+                        <td>{item.skillSet}</td>
+                        <td>{item.requiredCompetency}</td>
                         <td>{item.currentLevel.toFixed(2)}</td>
                         <td>{item.expectedLevel.toFixed(2)}</td>
                         <td style={{ color: item.gap > 0 ? '#d9534f' : '#5cb85c' }}>
@@ -455,6 +641,7 @@ export const AnalysisResultStep: React.FC<AnalysisResultStepProps> = ({
                       </tr>
                     ))}
                     <tr style={{ backgroundColor: '#f5f5f5', fontWeight: 'bold' }}>
+                      <td></td>
                       <td></td>
                       <td>평균</td>
                       <td>{averageData.avgCurrentLevel.toFixed(2)}</td>
@@ -481,11 +668,11 @@ export const AnalysisResultStep: React.FC<AnalysisResultStepProps> = ({
             {/* 2x2 메트릭스 차트 영역 */}
             {analysisData.length > 0 && (
               <div className="charts-container" ref={chartContainerRef} style={{ marginTop: '2rem' }}>
-                <div className="charts-row" style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'space-around', gap: '1rem' }}>
-                  <div className="chart-wrapper" style={{ flex: '1 1 45%', minWidth: '300px' }}>
+                <div className="charts-row" style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'space-around', gap: '2rem' }}>
+                  <div className="chart-wrapper" style={{ width: '560px', height: '400px', flexShrink: 0 }}>
                     {renderChart('gap')}
                   </div>
-                  <div className="chart-wrapper" style={{ flex: '1 1 45%', minWidth: '300px' }}>
+                  <div className="chart-wrapper" style={{ width: '560px', height: '400px', flexShrink: 0 }}>
                     {renderChart('borich')}
                   </div>
                 </div>
@@ -511,7 +698,7 @@ export const AnalysisResultStep: React.FC<AnalysisResultStepProps> = ({
                 <li><strong>기대수준 평균</strong>: 리더를 제외한 팀원들의 기대 스킬 수준 평균값</li>
                 <li><strong>gap</strong>: 기대수준과 현재수준의 차이</li>
                 <li><strong>t-value</strong>: t-검정 통계량으로 차이의 유의미성 표시</li>
-                <li><strong>borich 요구도</strong>: 중요도(기대수준) × gap으로 계산된 우선순위 지표</li>
+                <li><strong>borich 요구도</strong>: Σ(기대수준-현재수준) * 기대수준평균 / 팀원 수</li>
               </ul>
               <p><em>* 우선순위가 낮을수록 개발이 더 필요한 역량입니다.</em></p>
             </div>
