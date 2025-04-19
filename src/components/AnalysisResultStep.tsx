@@ -1,6 +1,8 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import '../styles/SkillAnalysis.css';
 import { SkillData } from './SkillAnalysis';
+import * as XLSX from 'xlsx';
+import { saveAs } from 'file-saver';
 
 interface AnalysisResultStepProps {
   integratedData: SkillData[];
@@ -560,17 +562,294 @@ export const AnalysisResultStep: React.FC<AnalysisResultStepProps> = ({
             y={padding.top + 20} 
             fontSize="10" 
             fill="#495057">
-            * 차트의 숫자는 위항목의 스킬셋입니다.
+            * 차트의 번호는 위항목의 스킬셋 번호입니다.
           </text>
         </svg>
       </div>
     );
   };
   
+  // 엑셀 리포트 생성 함수
+  const createExcelReport = useCallback(() => {
+    if (!analysisData.length) {
+      alert('분석 데이터가 없습니다.');
+      return;
+    }
+    
+    try {
+      // 워크북 생성
+      const workbook = XLSX.utils.book_new();
+      
+      // 2. 스킬 분석 데이터 시트
+      const analysisTableData = [
+        ['No.', '스킬셋', '요구역량', '현재수준 평균', '기대수준 평균', 'gap', '우선순위', 't-value', 'borich 요구도', '우선 순위']
+      ];
+      
+      analysisData.forEach((item, index) => {
+        analysisTableData.push([
+          (index + 1).toString(),
+          item.skillSet,
+          item.requiredCompetency,
+          item.currentLevel.toFixed(2),
+          item.expectedLevel.toFixed(2),
+          item.gap.toFixed(2),
+          item.gapRank.toString(),
+          item.tValue.toFixed(3),
+          item.borichValue.toFixed(2),
+          item.borichRank.toString()
+        ]);
+      });
+      
+      // 평균 행 추가
+      analysisTableData.push([
+        '',
+        '',
+        '평균',
+        averageData.avgCurrentLevel.toFixed(2),
+        averageData.avgExpectedLevel.toFixed(2),
+        averageData.avgGap.toFixed(2),
+        '',
+        '',
+        averageData.avgBorich.toFixed(2),
+        ''
+      ]);
+      
+      const analysisSheet = XLSX.utils.aoa_to_sheet(analysisTableData);
+      
+      // 열 너비 설정
+      const analysisCols = [
+        { wch: 5 },   // No.
+        { wch: 30 },  // 스킬셋
+        { wch: 30 },  // 요구역량
+        { wch: 12 },  // 현재수준 평균
+        { wch: 12 },  // 기대수준 평균
+        { wch: 8 },   // gap
+        { wch: 8 },   // 우선순위
+        { wch: 10 },  // t-value
+        { wch: 12 },  // borich 요구도
+        { wch: 8 }    // 우선 순위
+      ];
+      analysisSheet['!cols'] = analysisCols;
+      
+      XLSX.utils.book_append_sheet(workbook, analysisSheet, '스킬 분석 데이터');
+      
+      // 3. GAP 메트릭스 데이터 시트 (사분면 정보 추가)
+      const gapChartData = [
+        ['스킬셋', '요구역량', '현재수준', '기대수준', 'GAP', '기대수준 평균 기준', 'GAP 평균 기준', '사분면', '개발 우선순위']
+      ];
+      
+      const avgExpectedLevel = averageData.avgExpectedLevel;
+      const avgGap = averageData.avgGap;
+      
+      analysisData.forEach(item => {
+        // 사분면 결정
+        let quadrant = '';
+        let priority = '';
+        
+        if (item.expectedLevel > avgExpectedLevel && item.gap > avgGap) {
+          quadrant = 'HH';
+          priority = '최우선 개발 필요';
+        } else if (item.expectedLevel > avgExpectedLevel && item.gap <= avgGap) {
+          quadrant = 'HL';
+          priority = '현 수준 유지 필요';
+        } else if (item.expectedLevel <= avgExpectedLevel && item.gap > avgGap) {
+          quadrant = 'LH';
+          priority = '선별적 개발 필요';
+        } else {
+          quadrant = 'LL';
+          priority = '개발 우선순위 낮음';
+        }
+        
+        gapChartData.push([
+          item.skillSet,
+          item.requiredCompetency,
+          item.currentLevel.toFixed(2),
+          item.expectedLevel.toFixed(2),
+          item.gap.toFixed(2),
+          // 평균 기준으로 위치 정보 (높음/낮음)
+          item.expectedLevel > avgExpectedLevel ? '높음' : '낮음',
+          item.gap > avgGap ? '높음' : '낮음',
+          quadrant,
+          priority
+        ]);
+      });
+      
+      const gapChartSheet = XLSX.utils.aoa_to_sheet(gapChartData);
+      
+      // 열 너비 설정
+      const gapChartCols = [
+        { wch: 30 },  // 스킬셋
+        { wch: 30 },  // 요구역량
+        { wch: 10 },  // 현재수준
+        { wch: 10 },  // 기대수준
+        { wch: 8 },   // GAP
+        { wch: 18 },  // 기대수준 평균 기준
+        { wch: 14 },  // GAP 평균 기준
+        { wch: 8 },   // 사분면
+        { wch: 18 }   // 개발 우선순위
+      ];
+      gapChartSheet['!cols'] = gapChartCols;
+      
+      XLSX.utils.book_append_sheet(workbook, gapChartSheet, 'GAP 차트 데이터');
+      
+      // 7. 메트릭스 좌표 데이터 시트 (차트 그리기용)
+      const avgBorich = averageData.avgBorich;
+      const matrixCoordinatesData = [
+        ['메트릭스 좌표 데이터 (차트 그리기용)'],
+        [''],
+        ['GAP 메트릭스 좌표'],
+        ['번호', '스킬셋', '요구역량', 'X좌표(기대수준)', 'Y좌표(GAP)', '사분면', '우선순위']
+      ];
+      
+      analysisData.forEach((item, index) => {
+        // 사분면 결정
+        let quadrant = '';
+        let priority = '';
+        
+        if (item.expectedLevel > avgExpectedLevel && item.gap > avgGap) {
+          quadrant = 'HH';
+          priority = '최우선 개발 필요';
+        } else if (item.expectedLevel > avgExpectedLevel && item.gap <= avgGap) {
+          quadrant = 'HL';
+          priority = '현 수준 유지 필요';
+        } else if (item.expectedLevel <= avgExpectedLevel && item.gap > avgGap) {
+          quadrant = 'LH';
+          priority = '선별적 개발 필요';
+        } else {
+          quadrant = 'LL';
+          priority = '개발 우선순위 낮음';
+        }
+        
+        matrixCoordinatesData.push([
+          (index + 1).toString(),
+          item.skillSet,
+          item.requiredCompetency,
+          item.expectedLevel.toFixed(2),
+          item.gap.toFixed(2),
+          quadrant,
+          priority
+        ]);
+      });
+      
+      // 기준선 정보 추가
+      matrixCoordinatesData.push(['']);
+      matrixCoordinatesData.push(['기준선 정보']);
+      matrixCoordinatesData.push(['기대수준 평균(X축 기준선)', avgExpectedLevel.toFixed(2)]);
+      matrixCoordinatesData.push(['GAP 평균(Y축 기준선)', avgGap.toFixed(2)]);
+      
+      // Borich 좌표 정보 추가
+      matrixCoordinatesData.push(['']);
+      matrixCoordinatesData.push(['Borich 메트릭스 좌표']);
+      matrixCoordinatesData.push(['번호', '스킬셋', '요구역량', 'X좌표(기대수준)', 'Y좌표(Borich)', '사분면', '우선순위']);
+      
+      analysisData.forEach((item, index) => {
+        // 사분면 결정
+        let quadrant = '';
+        let priority = '';
+        
+        if (item.expectedLevel > avgExpectedLevel && item.borichValue > avgBorich) {
+          quadrant = 'HH';
+          priority = '최우선 개발 필요';
+        } else if (item.expectedLevel > avgExpectedLevel && item.borichValue <= avgBorich) {
+          quadrant = 'HL';
+          priority = '현 수준 유지 필요';
+        } else if (item.expectedLevel <= avgExpectedLevel && item.borichValue > avgBorich) {
+          quadrant = 'LH';
+          priority = '선별적 개발 필요';
+        } else {
+          quadrant = 'LL';
+          priority = '개발 우선순위 낮음';
+        }
+        
+        matrixCoordinatesData.push([
+          (index + 1).toString(),
+          item.skillSet,
+          item.requiredCompetency,
+          item.expectedLevel.toFixed(2),
+          item.borichValue.toFixed(2),
+          quadrant,
+          priority
+        ]);
+      });
+      
+      // Borich 기준선 정보 추가
+      matrixCoordinatesData.push(['']);
+      matrixCoordinatesData.push(['기준선 정보']);
+      matrixCoordinatesData.push(['기대수준 평균(X축 기준선)', avgExpectedLevel.toFixed(2)]);
+      matrixCoordinatesData.push(['Borich 평균(Y축 기준선)', avgBorich.toFixed(2)]);
+      
+      const matrixCoordinatesSheet = XLSX.utils.aoa_to_sheet(matrixCoordinatesData);
+      
+      // 열 너비 설정
+      const matrixCoordCols = [
+        { wch: 8 },   // 번호
+        { wch: 30 },  // 스킬셋
+        { wch: 30 },  // 요구역량
+        { wch: 16 },  // X좌표(기대수준)
+        { wch: 14 },  // Y좌표(GAP/Borich)
+        { wch: 8 },   // 사분면
+        { wch: 18 }   // 우선순위
+      ];
+      matrixCoordinatesSheet['!cols'] = matrixCoordCols;
+      
+      XLSX.utils.book_append_sheet(workbook, matrixCoordinatesSheet, '메트릭스 좌표 데이터');
+      
+      
+      // 6. 원본 데이터 시트
+      const rawData = [
+        ['스킬셋', '요구역량', '이름', '현재수준', '기대수준', 'GAP']
+      ];
+      
+      integratedData.forEach(skill => {
+        if (skill.조직리스트 && skill.조직리스트.length > 0) {
+          skill.조직리스트.forEach(member => {
+            const current = Number(member.현재수준);
+            const expected = Number(member.기대수준);
+            const gap = !isNaN(current) && !isNaN(expected) ? expected - current : 'N/A';
+            
+            rawData.push([
+              skill.스킬셋,
+              skill.요구역량,
+              member.이름,
+              typeof member.현재수준 === 'number' ? member.현재수준.toString() : member.현재수준,
+              typeof member.기대수준 === 'number' ? member.기대수준.toString() : member.기대수준,
+              typeof gap === 'number' ? gap.toFixed(2) : gap
+            ]);
+          });
+        }
+      });
+      
+      const rawDataSheet = XLSX.utils.aoa_to_sheet(rawData);
+      
+      // 열 너비 설정
+      const rawDataCols = [
+        { wch: 30 },  // 스킬셋
+        { wch: 30 },  // 요구역량
+        { wch: 12 },  // 이름
+        { wch: 10 },  // 현재수준
+        { wch: 10 },  // 기대수준
+        { wch: 8 }    // GAP
+      ];
+      rawDataSheet['!cols'] = rawDataCols;
+      
+      XLSX.utils.book_append_sheet(workbook, rawDataSheet, '원본 데이터');
+      
+      // 엑셀 파일 생성 및 다운로드
+      const excelBuffer = XLSX.write(workbook, { bookType: 'xlsx', type: 'array' });
+      const blob = new Blob([excelBuffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+      saveAs(blob, `스킬_요구도_분석_${new Date().toISOString().split('T')[0]}.xlsx`);
+      
+      alert('엑셀 리포트가 생성되었습니다.');
+    } catch (error) {
+      console.error('엑셀 생성 오류:', error);
+      alert('엑셀 리포트 생성 중 오류가 발생했습니다.');
+    }
+  }, [analysisData, averageData, integratedData]);
+  
   return (
     <div className="analysis-content">
       <h3>요구도 분석 결과</h3>
-      <p>IPA, Borich, The Locus for Focus 방법론을 활용한 스킬 요구도 분석 결과입니다. (리더값 제외)</p>
+      <p>IPA, Borich, The Locus for Focus 방법론을 활용한 스킬 요구도 분석 결과입니다. (리더 제외)</p>
       
       {isLoading ? (
         <div className="loading-indicator">
@@ -703,6 +982,28 @@ export const AnalysisResultStep: React.FC<AnalysisResultStepProps> = ({
               <p><em>* 우선순위가 낮을수록 개발이 더 필요한 역량입니다.</em></p>
             </div>
           </div>
+
+          {analysisData.length > 0 && (
+            <button 
+              className="report-button" 
+              onClick={createExcelReport}
+              style={{
+                padding: '12px 24px',
+                backgroundColor: '#4285F4',
+                color: 'white',
+                border: 'none',
+                borderRadius: '4px',
+                cursor: 'pointer',
+                fontWeight: 'bold',
+                margin: '25px auto 15px',
+                display: 'block',
+                boxShadow: '0 2px 5px rgba(0,0,0,0.2)',
+                fontSize: '14px'
+              }}
+            >
+              엑셀 리포트 생성
+            </button>
+          )}
           
           <div className="step-navigation">
             <button 

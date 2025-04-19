@@ -2,7 +2,6 @@ import { useState, useRef, useCallback } from 'react'
 import '../styles/SkillAnalysis.css'
 import * as XLSX from 'xlsx'
 import { ValidationStep } from './ValidationStep'
-import { AnalysisStep } from './AnalysisStep'
 import { AnalysisResultStep } from './AnalysisResultStep'
 
 interface SkillAnalysisProps {
