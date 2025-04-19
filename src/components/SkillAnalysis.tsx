@@ -3,6 +3,13 @@ import '../styles/SkillAnalysis.css'
 import * as XLSX from 'xlsx'
 import { ValidationStep } from './ValidationStep'
 import { AnalysisResultStep } from './AnalysisResultStep'
+import SkillFrequencyStep from './SkillFrequencyStep'
+import { createClient } from '@supabase/supabase-js'
+
+// Supabase 클라이언트 초기화
+const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || '';
+const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY || '';
+const supabase = createClient(supabaseUrl, supabaseKey);
 
 interface SkillAnalysisProps {
   onBack: () => void
@@ -22,6 +29,7 @@ export interface SkillData {
   핵심기술?: string;
   스킬셋: string;
   요구역량: string;
+  구분?: string;
   현재수준?: number;
   기대수준?: number;
   L1?: string;
@@ -37,7 +45,7 @@ export interface SkillData {
 }
 
 // 단계 타입 정의
-type Step = 'upload' | 'data' | 'validation' | 'analysis';
+type Step = 'upload' | 'data' | 'validation' | 'analysis' | 'frequency';
 
 export function SkillAnalysis({ onBack }: SkillAnalysisProps) {
   // 파일 입력 참조
@@ -233,6 +241,7 @@ export function SkillAnalysis({ onBack }: SkillAnalysisProps) {
       const requirement = skill['요구역량'] || '';
       const currentLevel = skill['현재수준'] || '';
       const expectedLevel = skill['기대수준'] || '';
+      const category = skill['구분'] || '미분류';
       
       if (skillSet && requirement) {
         const key = `${skillSet}:${requirement}`;
@@ -242,6 +251,7 @@ export function SkillAnalysis({ onBack }: SkillAnalysisProps) {
           핵심기술: coreSkill,
           스킬셋: skillSet,
           요구역량: requirement,
+          구분: category,
           조직리스트 : []
         });
 
@@ -350,6 +360,8 @@ export function SkillAnalysis({ onBack }: SkillAnalysisProps) {
       handleGoToStep('validation');
     } else if (currentStep === 'validation' && completedSteps.has('validation')) {
       handleGoToStep('analysis');
+    } else if (currentStep === 'analysis' && completedSteps.has('analysis')) {
+      handleGoToStep('frequency');
     }
   };
   
@@ -361,6 +373,8 @@ export function SkillAnalysis({ onBack }: SkillAnalysisProps) {
       handleGoToStep('data');
     } else if (currentStep === 'analysis') {
       handleGoToStep('validation');
+    } else if (currentStep === 'frequency') {
+      handleGoToStep('analysis');
     }
   };
   
@@ -378,8 +392,10 @@ export function SkillAnalysis({ onBack }: SkillAnalysisProps) {
   };
 
   // 입력값 검증 완료 처리
-  const completeValidationStep = () => {
+  const completeValidationStep = async () => {
     console.log('입력값 검증 완료, 현재 통합 데이터:', integratedData);
+
+    await saveIntegratedData(integratedData);
     
     setCompletedSteps(prev => {
       const newSet = new Set(prev);
@@ -390,6 +406,107 @@ export function SkillAnalysis({ onBack }: SkillAnalysisProps) {
     // 분석 단계로 이동하고 해당 패널만 펼침
     setCurrentStep('analysis');
     setExpandedPanels(new Set(['analysis']));
+  };
+  
+  const saveIntegratedData = async (data: SkillData[]) => {
+    if (!data || data.length === 0) return;
+    
+    try {
+      // Supabase에 데이터 저장을 위해 기존 데이터를 확인
+      // 먼저 기존 데이터 삭제 후 저장
+      const teamName = data[0]?.팀 || '미지정';
+      
+      console.log(data);
+
+      var saveNo = 0;
+      // 각 스킬에 대한 평균 기대역량 및 현재역량 계산
+      const skillAnalysisData = data.map(skill => {
+        if (!skill.조직리스트 || skill.조직리스트.length === 0) {
+          return {
+            팀명: teamName,
+            스킬셋: skill.스킬셋,
+            요구역량: skill.요구역량,
+            현재역량평균: 0,
+            기대역량평균: 0,
+            분석일자: new Date()
+          };
+        }
+        
+        // 데이터 계산을 위한 변수
+        let totalCurrent = 0;
+        let totalExpected = 0;
+        let validCount = 0;
+        
+        // 각 조직원의 데이터 집계
+        skill.조직리스트.forEach(member => {
+          const current = Number(member.현재수준);
+          const expected = Number(member.기대수준);
+          
+          if (!isNaN(current) && !isNaN(expected)) {
+            totalCurrent += current;
+            totalExpected += expected;
+            validCount++;
+          }
+        });
+        
+        // 평균 계산
+        const avgCurrent = validCount > 0 ? totalCurrent / validCount : 0;
+        const avgExpected = validCount > 0 ? totalExpected / validCount : 0;
+        
+        return {
+          팀명: teamName,
+          순번: saveNo++,
+          스킬셋: skill.스킬셋,
+          요구역량: skill.요구역량,
+          구분: skill.구분 || '미분류',
+          현재역량: parseFloat(avgCurrent.toFixed(2)),
+          기대역량: parseFloat(avgExpected.toFixed(2)),
+          분석일자: new Date(new Date().getTime() + 9 * 60 * 60 * 1000).toISOString()
+        };
+      });
+      
+      // 1. 해당 팀의 기존 데이터 삭제
+      const { error: deleteError } = await supabase
+        .from('frequency_data')
+        .delete()
+        .eq('팀명', teamName);
+      
+      if (deleteError) {
+        console.error('기존 데이터 삭제 오류:', deleteError);
+        // 삭제 실패해도 계속 진행
+      }
+      
+      // 2. 새 데이터 삽입
+      const { data: insertedData, error: insertError } = await supabase
+        .from('frequency_data')
+        .insert(skillAnalysisData)
+        .select();
+      
+      if (insertError) {
+        console.error('데이터 저장 오류:', insertError);
+        alert('데이터 저장에 실패했습니다: ' + insertError.message);
+      } else {
+        console.log('데이터 저장 성공:', insertedData);
+      }
+    } catch (dbErr) {
+      console.error('데이터베이스 작업 오류:', dbErr);
+      alert('데이터베이스 작업 중 오류가 발생했습니다.');
+    }
+  };
+  
+  // 분석 결과 완료 처리
+  const completeAnalysisStep = () => {
+    console.log('분석 결과 완료, 스킬셋 빈도 분석으로 이동');
+    
+    setCompletedSteps(prev => {
+      const newSet = new Set(prev);
+      newSet.add('analysis');
+      return newSet;
+    });
+    
+    // 스킬셋 빈도 분석 단계로 이동하고 해당 패널만 펼침
+    setCurrentStep('frequency');
+    setExpandedPanels(new Set(['frequency']));
   };
   
   // 패널 토글 함수
@@ -411,6 +528,8 @@ export function SkillAnalysis({ onBack }: SkillAnalysisProps) {
   const completeStep = useCallback((step: string, nextStep: string) => {
     // ... existing code ...
   }, []);
+  
+  
   
   return (
     <div className="skill-analysis">
@@ -458,6 +577,14 @@ export function SkillAnalysis({ onBack }: SkillAnalysisProps) {
           >
             <div className="step-number">4</div>
             <div className="step-label">분석 결과</div>
+          </div>
+          <div className="step-connector"></div>
+          <div 
+            className={`step-item ${currentStep === 'frequency' ? 'active' : ''} ${completedSteps.has('frequency') ? 'completed' : ''}`}
+            onClick={() => completedSteps.has('analysis') && handleGoToStep('frequency')}
+          >
+            <div className="step-number">5</div>
+            <div className="step-label">스킬셋 빈도</div>
           </div>
         </div>
         
@@ -638,6 +765,41 @@ export function SkillAnalysis({ onBack }: SkillAnalysisProps) {
               integratedData={integratedData}
               onPrev={() => handlePrev()}
               completedSteps={completedSteps}
+            />
+            
+            <div className="step-navigation">
+              <button 
+                className="nav-button prev"
+                onClick={handlePrev}
+              >
+                이전 단계
+              </button>
+              
+              <button 
+                className="nav-button next"
+                onClick={completeAnalysisStep}
+              >
+                다음 단계
+              </button>
+            </div>
+          </div>
+        </div>
+        
+        {/* 스킬셋 빈도 분석 단계 */}
+        <div className={`step-panel ${expandedPanels.has('frequency') ? 'expanded' : 'collapsed'}`}>
+          <div className="panel-header" onClick={() => togglePanel('frequency')}>
+            <h2 className="step-title">Step 5. 스킬셋 빈도 분석</h2>
+            <button className="toggle-button">
+              {expandedPanels.has('frequency') ? '접기' : '펼치기'}
+            </button>
+          </div>
+          
+          <div className="panel-content">
+            <SkillFrequencyStep 
+              integratedData={integratedData}
+              onPrev={() => handlePrev()}
+              completedSteps={completedSteps}
+              onComplete={() => console.log('Frequency step completed')}
             />
           </div>
         </div>

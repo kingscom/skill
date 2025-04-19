@@ -1,0 +1,146 @@
+.skill-frequency-container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 20px;
+}
+
+.controls {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 20px;
+  padding: 15px;
+  background-color: #f8f9fa;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.color-mode-selector,
+.category-filter {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.color-mode-selector label,
+.category-filter label {
+  font-weight: 600;
+  color: #333;
+}
+
+.color-mode-selector select,
+.category-filter select {
+  padding: 8px 12px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  background-color: white;
+  font-size: 14px;
+  color: #333;
+}
+
+.graph-container {
+  height: 600px;
+  border-radius: 8px;
+  overflow: hidden;
+  background-color: #fff;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  margin-bottom: 20px;
+}
+
+.legend {
+  padding: 15px;
+  background-color: #f8f9fa;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.legend h4 {
+  margin-top: 0;
+  margin-bottom: 10px;
+  color: #333;
+  font-size: 16px;
+}
+
+.legend h5 {
+  margin: 15px 0 10px;
+  color: #555;
+  font-size: 14px;
+}
+
+.legend-item {
+  display: flex;
+  align-items: center;
+  margin-bottom: 8px;
+  font-size: 14px;
+}
+
+.legend-color {
+  display: inline-block;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  margin-right: 8px;
+}
+
+.level-colors {
+  margin-top: 15px;
+}
+
+.color-scale {
+  display: flex;
+  gap: 15px;
+  flex-wrap: wrap;
+}
+
+.color-item {
+  display: flex;
+  align-items: center;
+  font-size: 14px;
+}
+
+.color-box {
+  display: inline-block;
+  width: 16px;
+  height: 16px;
+  margin-right: 8px;
+  border-radius: 3px;
+}
+
+.loading, .error {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 400px;
+  color: #666;
+  font-size: 16px;
+  background-color: #f9f9f9;
+  border-radius: 8px;
+}
+
+.error {
+  color: #d32f2f;
+}
+
+@media (max-width: 768px) {
+  .controls {
+    flex-direction: column;
+    gap: 15px;
+  }
+  
+  .graph-container {
+    height: 400px;
+  }
+  
+  .color-scale {
+    gap: 10px;
+  }
+}
+
+@media (min-width: 1200px) {
+  .skill-frequency-container {
+    max-width: 1600px;
+  }
+  
+  .graph-container {
+    height: 800px;
+  }
+} 

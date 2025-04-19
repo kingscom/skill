@@ -968,76 +968,93 @@ export const ValidationStep: React.FC<ValidationStepProps> = ({
                     <div className="data-grid-container">
                       {tableData.length > 0 ? (
                         <>
-                          <table {...getTableProps()} className="validation-table">
-                            <thead>
-                              {headerGroups.map((headerGroup: any) => (
-                                <tr {...headerGroup.getHeaderGroupProps()}>
-                                  {headerGroup.headers.map((column: any) => (
-                                    <th {...column.getHeaderProps(column.getSortByToggleProps())}>
-                                      {column.render('Header')}
-                                      <span>
-                                        {column.isSorted
-                                          ? column.isSortedDesc
-                                            ? ' 🔽'
-                                            : ' 🔼'
-                                          : ''}
-                                      </span>
-                                    </th>
-                                  ))}
-                                </tr>
-                              ))}
-                            </thead>
-                            <tbody {...getTableBodyProps()}>
-                              {rows.map((row: any) => {
-                                prepareRow(row);
-                                return (
-                                  <tr {...row.getRowProps()}>
-                                    {row.cells.map((cell: any) => (
-                                      <td {...cell.getCellProps()}>{cell.render('Cell')}</td>
-                                    ))}
-                                  </tr>
-                                );
-                              })}
-                              
-                              {/* 리더 제외 평균값 행 추가 */}
-                              {teamAverages && (
-                                <tr style={{ 
-                                  backgroundColor: '#e8f5e9', 
-                                  fontWeight: 'bold',
-                                  borderTop: '2px solid #4CAF50'
-                                }}>
-                                  <td style={{ textAlign: 'center' }}>
-                                    리더 제외 평균
-                                  </td>
-                                  <td style={{ textAlign: 'center' }}>
-                                    {teamAverages.avgCurrent}
-                                  </td>
-                                  <td style={{ textAlign: 'center' }}>
-                                    {teamAverages.avgExpected}
-                                  </td>
-                                  <td style={{ 
-                                    textAlign: 'center',
-                                    color: Number(teamAverages.gap) > 0 
-                                      ? '#4CAF50' 
-                                      : Number(teamAverages.gap) < 0 
-                                        ? '#F44336' 
-                                        : '#666' 
-                                  }}>
-                                    {Number(teamAverages.gap) > 0 ? `+${teamAverages.gap}` : teamAverages.gap}
-                                  </td>
-                                </tr>
-                              )}
-                            </tbody>
-                          </table>
+                          {(() => {
+                            const { key: tableKey, ...tableProps } = getTableProps();
+                            return (
+                              <table key={tableKey} {...tableProps} className="validation-table">
+                                <thead>
+                                  {headerGroups.map((headerGroup: any) => {
+                                    const { key: headerGroupKey, ...headerGroupProps } = headerGroup.getHeaderGroupProps();
+                                    return (
+                                      <tr key={headerGroupKey} {...headerGroupProps}>
+                                        {headerGroup.headers.map((column: any) => {
+                                          // getHeaderProps에서 key prop을 분리하여 JSX에 명시적으로 key 속성 추가
+                                          const { key, ...headerProps } = column.getHeaderProps(column.getSortByToggleProps());
+                                          return (
+                                            <th key={key} {...headerProps}>
+                                              {column.render('Header')}
+                                              <span>
+                                                {column.isSorted
+                                                  ? column.isSortedDesc
+                                                    ? ' 🔽'
+                                                    : ' 🔼'
+                                                  : ''}
+                                              </span>
+                                            </th>
+                                          );
+                                        })}
+                                      </tr>
+                                    );
+                                  })}
+                                </thead>
+                                {(() => {
+                                  const { key: tbodyKey, ...tbodyProps } = getTableBodyProps();
+                                  return (
+                                    <tbody key={tbodyKey} {...tbodyProps}>
+                                      {rows.map((row: any) => {
+                                        prepareRow(row);
+                                        const { key: rowKey, ...rowProps } = row.getRowProps();
+                                        return (
+                                          <tr key={rowKey} {...rowProps}>
+                                            {row.cells.map((cell: any) => {
+                                              const { key: cellKey, ...cellProps } = cell.getCellProps();
+                                              return (
+                                                <td key={cellKey} {...cellProps}>
+                                                  {cell.render('Cell')}
+                                                </td>
+                                              );
+                                            })}
+                                          </tr>
+                                        );
+                                      })}
+                                    </tbody>
+                                  );
+                                })()}
+                                
+                                {/* 리더 제외 평균값 행 추가 */}
+                                {teamAverages && (
+                                  <tfoot>
+                                    <tr style={{ 
+                                      backgroundColor: '#e8f5e9', 
+                                      fontWeight: 'bold',
+                                      borderTop: '2px solid #4CAF50'
+                                    }}>
+                                      <td style={{ textAlign: 'center' }}>
+                                        리더 제외 평균
+                                      </td>
+                                      <td style={{ textAlign: 'center' }}>
+                                        {teamAverages.avgCurrent}
+                                      </td>
+                                      <td style={{ textAlign: 'center' }}>
+                                        {teamAverages.avgExpected}
+                                      </td>
+                                      <td style={{ 
+                                        textAlign: 'center',
+                                        color: Number(teamAverages.gap) > 0 
+                                          ? '#4CAF50' 
+                                          : Number(teamAverages.gap) < 0 
+                                            ? '#F44336' 
+                                            : '#666' 
+                                      }}>
+                                        {Number(teamAverages.gap) > 0 ? `+${teamAverages.gap}` : teamAverages.gap}
+                                      </td>
+                                    </tr>
+                                  </tfoot>
+                                )}
+                              </table>
+                            );
+                          })()}
                           
-                          <div className="grid-actions">
-                            <button 
-                              className="action-button save"
-                              onClick={saveChanges}
-                            >
-                              변경사항 저장
-                            </button>
-                          </div>
                         </>
                       ) : (
                         <div className="empty-table-message">
