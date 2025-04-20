@@ -231,6 +231,7 @@
 .nav-button.next {
   background-color: #4CAF50;
   color: white;
+  margin-left: 20px;
 }
 
 .nav-button.next:hover {

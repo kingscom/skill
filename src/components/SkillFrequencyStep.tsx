@@ -1,16 +1,17 @@
-import React, { useState, useEffect, useCallback } from 'react';
-import ForceGraph2D from 'react-force-graph-2d';
+import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { createClient } from '@supabase/supabase-js';
 import '../styles/SkillFrequencyStep.css';
-// @ts-ignore
-import * as d3 from 'd3-scale-chromatic';
-// @ts-ignore
-import * as d3Scale from 'd3-scale';
+import * as d3 from 'd3';
 
 // Initialize Supabase client
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || '';
 const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY || '';
 const supabase = createClient(supabaseUrl, supabaseKey);
+
+// Constants
+const CIRCLE_MIN_SIZE = 80;
+const CIRCLE_MAX_SIZE = 200;
+const PADDING = 10;
 
 interface SkillFrequencyStepProps {
   onComplete: () => void;
@@ -30,111 +31,109 @@ interface SkillRecord {
   skill_set?: string;
 }
 
-interface GraphNode {
-  id: string;
+interface BubbleDataPoint {
+  id: number;
   name: string;
-  type: 'team' | 'category' | 'skill' | 'requirement';
-  level?: number;
-  requiredLevel?: number;
-  team?: string | number;
-  category?: string;
-  val: number;
+  category: string;
+  team: string | number;
+  requiredLevel: number;
+  currentLevel: number;
+  frequency: number;
+  color: string;
+  radius: number;
   x?: number;
   y?: number;
-  frequency: number;
-}
-
-interface GraphLink {
-  source: string;
-  target: string;
-  value: number;
-}
-
-interface GraphData {
-  nodes: GraphNode[];
-  links: GraphLink[];
+  fx?: number | null;
+  fy?: number | null;
+  index?: number;
+  vx?: number;
+  vy?: number;
 }
 
 const SkillFrequencyStep: React.FC<SkillFrequencyStepProps> = ({ onComplete, onPrev, integratedData, completedSteps }) => {
+  // Initialization refs to prevent re-renders
+  const initializedRef = useRef(false);
+  const svgRef = useRef<SVGSVGElement>(null);
+  const tooltipRef = useRef<HTMLDivElement>(null);
+  
+  // State management
   const [skillData, setSkillData] = useState<SkillRecord[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
-  const [graphData, setGraphData] = useState<GraphData>({ nodes: [], links: [] });
+  const [bubbleData, setBubbleData] = useState<BubbleDataPoint[]>([]);
   const [selectedSkillSet, setSelectedSkillSet] = useState<string>('all');
   const [skillSets, setSkillSets] = useState<string[]>([]);
   const [viewMode, setViewMode] = useState<'expected' | 'current'>('expected');
+  const [dimensions, setDimensions] = useState({ width: 800, height: 600 });
 
-  // Color scale function for the nodes based on their level
-  const getColorScale = (value: number, min: number, max: number): string => {
-    const colorScale = d3Scale.scaleSequential<string>()
-      .domain([min, max])
+  // 색상 스케일 함수
+  const getColorScale = useMemo(() => {
+    return d3.scaleSequential()
+      .domain([1, 5])
       .interpolator(d3.interpolateYlOrRd);
-    return colorScale(value);
-  };
+  }, []);
 
-  // Colors for node types
-  const nodeTypeColors: Record<string, string> = {
-    skill: '#4285F4',     // Blue for skill/requirement nodes
-    requirement: '#34A853' // Green for level nodes
-  };
-
-  // 스킬셋 필터링을 포함하도록 그래프 데이터 구성 함수 수정
-  const constructGraphData = useCallback((skills: SkillRecord[], _: string, skillSetFilter: string) => {
-    const nodes: GraphNode[] = [];
-    const links: GraphLink[] = [];
-    const nodeIds = new Set<string>();
-
-    // 스킬셋으로 스킬 필터링
-    let filteredSkills = skills;
+  // Transform skill data to bubble chart data
+  const processBubbleData = useCallback((
+    skills: SkillRecord[], 
+    skillSetFilter: string, 
+    currentViewMode: 'expected' | 'current'
+  ) => {
+    if (!skills || skills.length === 0) return [];
     
+    // Filter skills by skill set
+    let filteredSkills = skills;
     if (skillSetFilter !== 'all') {
       filteredSkills = filteredSkills.filter(skill => skill.skill_set === skillSetFilter);
     }
 
-    // 노드 크기 조정을 위한 최대 빈도 계산
+    // Calculate max frequency for size normalization
     const maxFrequency = Math.max(...filteredSkills.map(skill => skill.frequency || 1), 1);
-
-    // 요구역량 노드 추가
-    filteredSkills.forEach(skill => {
-      const skillId = `skill-${skill.id}`;
+    
+    // Map skills to bubble data points
+    return filteredSkills.map((skill) => {
+      // Set default frequency if not provided
+      const frequency = skill.frequency || 1;
       
-      if (!nodeIds.has(skillId)) {
-        // 빈도를 기반으로 노드 크기 조정, 기본 크기 15에 정규화된 빈도를 추가
-        const normalizedSize = 15 + (skill.frequency / maxFrequency) * 25;
-        
-        nodes.push({
-          id: skillId,
-          name: skill.skill_name,
-          type: 'skill',
-          category: skill.category,
-          team: skill.team,
-          level: skill.current_level,
-          requiredLevel: skill.required_level,
-          frequency: skill.frequency,
-          val: normalizedSize
-        });
-        nodeIds.add(skillId);
-      }
+      // Calculate bubble size based on frequency
+      const scaleFactor = frequency / maxFrequency;
+      const radius = CIRCLE_MIN_SIZE + scaleFactor * (CIRCLE_MAX_SIZE - CIRCLE_MIN_SIZE);
+      
+      // Determine color based on view mode
+      const levelValue = currentViewMode === 'expected' ? skill.required_level : skill.current_level;
+      const color = getColorScale(levelValue);
+      
+      return {
+        id: skill.id,
+        name: skill.skill_name,
+        category: skill.category || '미분류',
+        team: skill.team,
+        requiredLevel: skill.required_level,
+        currentLevel: skill.current_level,
+        frequency,
+        color,
+        radius: Math.sqrt(radius) * 4  // Increased from *3 to *4 for even larger nodes
+      };
     });
+  }, [getColorScale]);
 
-    setGraphData({ nodes, links });
-  }, []);
-
-  // 데이터 로딩 함수
-  const fetchSkillData = useCallback(async () => {
+  // Load data from Supabase or from integrated data
+  const loadData = useCallback(async () => {
+    if (initializedRef.current) return;
+    initializedRef.current = true;
+    
     setLoading(true);
     setError(null);
     
     try {
       let skillRecords: SkillRecord[] = [];
       
-      // 통합 데이터를 사용하는 경우
+      // Process integrated data if available
       if (integratedData && integratedData.length > 0) {
-        console.log('Using integrated data from parent component:', integratedData);
+        console.log('Using integrated data from parent component');
         
-        // 통합 데이터를 SkillRecord 형식으로 변환
         skillRecords = integratedData.map((item, index) => {
-          // 같은 요구역량에 대한 평균 계산
+          // Calculate averages for each skill
           let totalCurrent = 0;
           let totalExpected = 0;
           let validCount = 0;
@@ -160,47 +159,41 @@ const SkillFrequencyStep: React.FC<SkillFrequencyStepProps> = ({ onComplete, onP
             skill_name: item.요구역량 || '',
             category: item.구분 || '미분류',
             team: item.팀 || '',
-            frequency: validCount, // 데이터 개수를 빈도로 사용
+            frequency: validCount,
             required_level: avgExpected,
             current_level: avgCurrent,
             skill_set: item.스킬셋 || ''
           };
         });
       } else {
-        // 기존 방식으로 데이터 가져오기
-        console.log('Fetching data from Supabase frequency_data table');
+        // Fetch from Supabase if no integrated data
+        console.log('Fetching data from Supabase');
         const { data, error } = await supabase
           .from('frequency_data')
           .select('*');
 
         if (error) {
-          console.error('Supabase error:', error);
           throw error;
         }
         
         if (!data || data.length === 0) {
-          console.log('No data found in frequency_data table');
           throw new Error('데이터를 찾을 수 없습니다. 이전 단계에서 데이터를 먼저 저장해주세요.');
         }
         
-        console.log('Fetched data from Supabase:', data);
-        
-        // 데이터를 SkillRecord 형식으로 변환
+        // Convert to SkillRecord format
         skillRecords = data.map((item, index) => ({
           id: index,
           skill_name: item.요구역량 || '',
           category: item.구분 || '미분류',
           team: item.팀명 || '',
-          frequency: 1, // 기본 빈도
+          frequency: 1,
           required_level: item.기대역량 || 0,
           current_level: item.현재역량 || 0,
           skill_set: item.스킬셋 || ''
         }));
       }
       
-      setSkillData(skillRecords);
-      
-      // 고유한 스킬셋 추출
+      // Extract unique skill sets
       const uniqueSkillSets = Array.from(
         new Set(
           skillRecords
@@ -208,143 +201,230 @@ const SkillFrequencyStep: React.FC<SkillFrequencyStepProps> = ({ onComplete, onP
             .filter((skillSet): skillSet is string => typeof skillSet === 'string' && skillSet !== '')
         )
       );
-      setSkillSets(uniqueSkillSets);
       
-      // 기본 스킬셋 선택
+      // Update state with new data
+      setSkillData(skillRecords);
+      setSkillSets(uniqueSkillSets);
       if (uniqueSkillSets.length > 0) {
         setSelectedSkillSet(uniqueSkillSets[0]);
       }
       
-      // 초기 그래프 데이터 구성
-      constructGraphData(
-        skillRecords, 
-        'all', 
-        uniqueSkillSets.length > 0 ? uniqueSkillSets[0] : 'all'
-      );
-      
       setLoading(false);
     } catch (err: any) {
-      console.error('Error fetching skill data:', err);
+      console.error('Error loading skill data:', err);
       setError(err.message || 'Failed to load skill data. Please try again later.');
       setLoading(false);
     }
-  }, [integratedData, constructGraphData]);
+  }, [integratedData]);
 
+  // Initial data loading on mount
   useEffect(() => {
-    fetchSkillData();
-  }, [fetchSkillData]);
+    loadData();
+  }, [loadData]);
 
-  // 노드 초기 위치 설정
+  // Update bubble data when selection changes
   useEffect(() => {
-    if (graphData.nodes.length > 0) {
-      // Deep copy the graph data
-      const newGraphData = {
-        nodes: [...graphData.nodes.map(node => ({...node}))],
-        links: [...graphData.links.map(link => ({...link}))]
-      };
-      
-      // Calculate grid dimensions based on node count
-      const nodeCount = newGraphData.nodes.length;
-      const cols = Math.ceil(Math.sqrt(nodeCount));
-      
-      // Get container size
-      const containerElement = document.querySelector('.graph-container');
-      const containerWidth = containerElement ? containerElement.clientWidth : 600;
-      const containerHeight = containerElement ? containerElement.clientHeight : 500;
-      
-      // Set initial positions for nodes in a grid that fits the canvas
-      newGraphData.nodes.forEach((node, i) => {
-        // Calculate grid position with padding
-        const col = i % cols;
-        const row = Math.floor(i / cols);
+    if (skillData.length > 0 && !loading) {
+      const newBubbleData = processBubbleData(skillData, selectedSkillSet, viewMode);
+      setBubbleData(newBubbleData);
+    }
+  }, [skillData, selectedSkillSet, viewMode, loading, processBubbleData]);
+
+  // D3.js 차트 생성 및 업데이트
+  useEffect(() => {
+    if (!svgRef.current || !bubbleData.length || loading) return;
+
+    // 차트 크기 및 여백 설정
+    const margin = { top: 40, right: 40, bottom: 40, left: 40 };
+    const width = dimensions.width - margin.left - margin.right;
+    const height = dimensions.height - margin.top - margin.bottom;
+
+    // 기존 요소 삭제
+    d3.select(svgRef.current).selectAll("*").remove();
+
+    // SVG 설정
+    const svg = d3.select(svgRef.current)
+      .attr("width", width + margin.left + margin.right)
+      .attr("height", height + margin.top + margin.bottom)
+      .append("g")
+      .attr("transform", `translate(${margin.left}, ${margin.top})`);
+
+    // 시뮬레이션 설정 - 노드들이 서로 충돌하지 않도록 배치
+    const simulation = d3.forceSimulation<BubbleDataPoint>(bubbleData)
+      .force("x", d3.forceX<BubbleDataPoint>(width / 2).strength(0.05))
+      .force("y", d3.forceY<BubbleDataPoint>(height / 2).strength(0.05))
+      .force("collide", d3.forceCollide<BubbleDataPoint>().radius(d => d.radius + PADDING).strength(0.9))
+      .alphaDecay(0.02)
+      .on("tick", ticked);
+
+    // 툴팁 설정
+    const tooltip = d3.select(tooltipRef.current);
+
+    // 노드 그룹 생성
+    const nodeGroup = svg.selectAll<SVGGElement, BubbleDataPoint>(".node")
+      .data(bubbleData)
+      .enter()
+      .append("g")
+      .attr("class", "node")
+      .style("cursor", "pointer")
+      .on("mouseover", function(event: MouseEvent, d: BubbleDataPoint) {
+        tooltip.style("display", "block");
         
-        // Center the grid and distribute nodes evenly
-        const totalWidth = cols * 100; // Assume 100px per node
-        const startX = (containerWidth - totalWidth) / 2;
+        // 레벨 값과 레이블 설정
+        const levelValue = viewMode === 'expected' ? d.requiredLevel : d.currentLevel;
+        const levelLabel = viewMode === 'expected' ? '기대역량' : '현재역량';
         
-        node.x = startX + col * 100 + 50; // 50px offset from grid cell start
-        node.y = 80 + row * 100; // Start from 80px from top with 100px per row
+        // 툴팁 내용 설정
+        tooltip.html(`
+          <div class="tooltip-title">${d.name}</div>
+          <p><strong>${levelLabel}:</strong> ${levelValue.toFixed(1)}</p>
+          <p><strong>빈도:</strong> ${d.frequency}</p>
+        `);
+        
+        // 툴팁 위치 설정
+        const tooltipWidth = (tooltipRef.current as HTMLElement).offsetWidth;
+        const tooltipHeight = (tooltipRef.current as HTMLElement).offsetHeight;
+        const tooltipX = event.pageX - tooltipWidth / 2;
+        const tooltipY = event.pageY - tooltipHeight - 10;
+        
+        tooltip
+          .style("left", `${tooltipX}px`)
+          .style("top", `${tooltipY}px`);
+      })
+      .on("mousemove", function(event: MouseEvent) {
+        const tooltipWidth = (tooltipRef.current as HTMLElement).offsetWidth;
+        const tooltipHeight = (tooltipRef.current as HTMLElement).offsetHeight;
+        const tooltipX = event.pageX - tooltipWidth / 2;
+        const tooltipY = event.pageY - tooltipHeight - 10;
+        
+        tooltip
+          .style("left", `${tooltipX}px`)
+          .style("top", `${tooltipY}px`);
+      })
+      .on("mouseout", function() {
+        tooltip.style("display", "none");
       });
       
-      setGraphData(newGraphData);
-    }
-  }, [skillData]);
+    // 원 그리기
+    nodeGroup.append("circle")
+      .attr("r", (d: BubbleDataPoint) => d.radius)
+      .attr("fill", (d: BubbleDataPoint) => d.color)
+      .attr("stroke", "#ffffff")
+      .attr("stroke-width", 3)
+      .attr("stroke-opacity", 0.8);
 
-  // 윈도우 리사이즈 처리
+    // 텍스트 그리기
+    nodeGroup.append("text")
+      .attr("text-anchor", "middle")
+      .attr("dominant-baseline", "middle")
+      .attr("fill", "#ffffff")
+      .attr("font-weight", "bold")
+      .attr("pointer-events", "none")
+      .style("text-shadow", "0 0 3px rgba(0,0,0,0.8)")
+      .style("user-select", "none")
+      .attr("font-size", (d: BubbleDataPoint) => {
+        // 원 크기에 따라 폰트 크기 조정 (smaller text)
+        return Math.max(10, Math.min(d.radius / 6, 14)) + "px";  // Reduced font size
+      })
+      .each(function(d: BubbleDataPoint) {
+        // 원 크기에 따라 텍스트 크기 조정
+        const maxLength = Math.floor(d.radius / 2.5);
+        let name = d.name;
+        
+        if (maxLength <= 3) {
+          // 너무 작은 원은 텍스트 표시 안함
+          name = '';
+        } else if (name.length > 10) {
+          // 10자 이상이면 줄바꿈 처리
+          const firstLine = name.substring(0, 10);
+          let secondLine = name.substring(10);
+          
+          // 첫 번째 줄 추가
+          d3.select(this)
+            .append("tspan")
+            .attr("x", 0)
+            .attr("dy", "-0.6em")
+            .text(firstLine);
+            
+          // 두 번째 줄 추가
+          d3.select(this)
+            .append("tspan")
+            .attr("x", 0)
+            .attr("dy", "1.2em")
+            .text(secondLine);
+            
+          return;
+        } else if (name.length > maxLength) {
+          // 최대 길이보다 길지만 10자 미만이면 잘라서 표시
+          name = name.substring(0, maxLength - 2) + '..';
+        }
+        
+        // 한 줄로 표시할 텍스트
+        if (name) {
+          d3.select(this)
+            .append("tspan")
+            .attr("x", 0)
+            .attr("dy", 0)
+            .text(name);
+        }
+      });
+
+    // 시뮬레이션 틱 함수 - 노드 위치 업데이트
+    function ticked() {
+      nodeGroup.attr("transform", (d: BubbleDataPoint) => {
+        // 경계 체크
+        d.x = Math.max(d.radius, Math.min(width - d.radius, d.x ?? width/2));
+        d.y = Math.max(d.radius, Math.min(height - d.radius, d.y ?? height/2));
+        return `translate(${d.x}, ${d.y})`;
+      });
+    }
+
+    // 클린업 함수
+    return () => {
+      simulation.stop();
+    };
+  }, [bubbleData, dimensions, loading, viewMode]);
+
+  // 창 크기 변경 감지
   useEffect(() => {
     const handleResize = () => {
-      // 그래프 데이터가 있을 때만 처리
-      if (graphData.nodes.length > 0) {
-        // Deep copy the graph data
-        const newGraphData = {
-          nodes: [...graphData.nodes.map(node => ({...node}))],
-          links: [...graphData.links.map(link => ({...link}))]
-        };
-        
-        // 컨테이너 크기 가져오기
-        const containerElement = document.querySelector('.graph-container');
-        const containerWidth = containerElement ? containerElement.clientWidth : 600;
-        const containerHeight = containerElement ? containerElement.clientHeight : 500;
-        
-        // 노드 수에 따른 그리드 차원 계산
-        const nodeCount = newGraphData.nodes.length;
-        const cols = Math.ceil(Math.sqrt(nodeCount));
-        
-        // 노드 위치 업데이트
-        newGraphData.nodes.forEach((node, i) => {
-          const col = i % cols;
-          const row = Math.floor(i / cols);
-          
-          // 그리드 중앙 정렬 및 노드 고르게 분포
-          const totalWidth = cols * 100;
-          const startX = (containerWidth - totalWidth) / 2;
-          
-          node.x = startX + col * 100 + 50;
-          node.y = 80 + row * 100;
-        });
-        
-        setGraphData(newGraphData);
+      if (svgRef.current && svgRef.current.parentElement) {
+        const containerWidth = svgRef.current.parentElement.clientWidth;
+        const containerHeight = Math.min(600, window.innerHeight * 0.7);
+        setDimensions({ width: containerWidth, height: containerHeight });
       }
     };
-    
-    // 리사이즈 이벤트 리스너 등록
+
+    handleResize();
     window.addEventListener('resize', handleResize);
-    
-    // 컴포넌트 언마운트시 이벤트 리스너 제거
+
     return () => {
       window.removeEventListener('resize', handleResize);
     };
-  }, [graphData.nodes.length]);
+  }, []);
 
-  // 스킬셋 필터 변경 처리
-  const handleSkillSetChange = (event: React.ChangeEvent<HTMLSelectElement>) => {
-    const skillSet = event.target.value;
-    setSelectedSkillSet(skillSet);
-    constructGraphData(skillData, 'all', skillSet);
-  };
+  // Handle skill set selection change
+  const handleSkillSetChange = useCallback((event: React.ChangeEvent<HTMLSelectElement>) => {
+    setSelectedSkillSet(event.target.value);
+  }, []);
 
-  // 색상 모드 변경 처리
-  const handleColorModeChange = (event: React.ChangeEvent<HTMLSelectElement>) => {
+  // Handle view mode change
+  const handleColorModeChange = useCallback((event: React.ChangeEvent<HTMLSelectElement>) => {
     setViewMode(event.target.value as 'expected' | 'current');
-  };
+  }, []);
 
-  // Node color based on selected mode
-  const getNodeColor = (node: GraphNode): string => {
-    // 노드 수준에 따라 색상 적용
-    if (node.type === 'skill') {
-      const levelValue = viewMode === 'expected' ? 
-        (node.requiredLevel || 3) : 
-        (node.level || 3);
-      return getColorScale(levelValue, 1, 5);
-    }
-    
-    return '#999';
-  };
+  // Retry loading data
+  const handleRetry = useCallback(() => {
+    initializedRef.current = false;
+    loadData();
+  }, [loadData]);
 
+  // Loading state
   if (loading) {
     return <div className="loading">Loading skill frequency data...</div>;
   }
 
+  // Error state
   if (error) {
     return (
       <div className="error-container">
@@ -360,7 +440,7 @@ const SkillFrequencyStep: React.FC<SkillFrequencyStepProps> = ({ onComplete, onP
           <div className="button-group">
             <button 
               className="nav-button retry"
-              onClick={fetchSkillData}
+              onClick={handleRetry}
             >
               다시 시도
             </button>
@@ -407,65 +487,27 @@ const SkillFrequencyStep: React.FC<SkillFrequencyStepProps> = ({ onComplete, onP
       </div>
 
       <div className="graph-container">
-        <ForceGraph2D
-          graphData={graphData}
-          nodeAutoColorBy={undefined}
-          nodeColor={(node) => getNodeColor(node as GraphNode)}
-          nodeLabel={(node: GraphNode) => {
-            if (node.type === 'skill') {
-              const levelValue = viewMode === 'expected' ? 
-                node.requiredLevel?.toFixed(1) : 
-                node.level?.toFixed(1);
-              const levelType = viewMode === 'expected' ? '기대역량' : '현재역량';
-              
-              return `${node.name}\n${levelType}: ${levelValue}\n빈도: ${node.frequency || 0}`;
-            }
-            return node.name;
-          }}
-          linkWidth={(link: any) => Math.sqrt(link.value)}
-          linkCurvature={0}
-          d3AlphaDecay={0.02}
-          d3VelocityDecay={0.4}
-          warmupTicks={100}
-          cooldownTicks={50}
-          nodeCanvasObject={(node: any, ctx: CanvasRenderingContext2D, globalScale: number) => {
-            const label = node.name;
-            const fontSize = 12/globalScale;
-            ctx.font = `${fontSize}px Sans-Serif`;
-            const textWidth = ctx.measureText(label).width;
-            const bckgDimensions = [textWidth, fontSize].map(n => n + fontSize * 0.2);
-
-            ctx.fillStyle = getNodeColor(node as GraphNode);
-            ctx.beginPath();
-            ctx.arc(node.x || 0, node.y || 0, node.val, 0, 2 * Math.PI);
-            ctx.fill();
-
-            ctx.textAlign = 'center';
-            ctx.textBaseline = 'middle';
-            ctx.fillStyle = 'white';
-            ctx.fillText(label, node.x || 0, node.y || 0);
-          }}
-        />
-      </div>
-
-      <div className="legend">
-        <div className="legend-content">
-          <h4>그래프 범례</h4>
-          <div className="node-info">
-            <h5>노드 정보</h5>
-            <div className="legend-item">
-              <span className="legend-item">노드 크기: 요구역량 빈도수</span>
-              <span className="legend-item">노드 색상: {viewMode === 'current' ? '현재역량' : '기대역량'} 수준</span>
-            </div>
+        <svg ref={svgRef} className="bubble-chart"></svg>
+        <div ref={tooltipRef} className="custom-tooltip" style={{ display: 'none', position: 'absolute' }}></div>
+        
+        {bubbleData.length === 0 && !loading && (
+          <div className="no-data-message">
+            <p>표시할 데이터가 없습니다.</p>
+            <p>다른 스킬셋을 선택하거나 이전 단계에서 데이터를 확인해주세요.</p>
           </div>
-          
-          <div className="level-colors">
-            <h5>{viewMode === 'current' ? '현재역량 척도' : '기대역량 척도'}</h5>
+        )}
+      </div>
+      
+      <div className="legend">
+        <div className="legend-content-row">
+          <h4>그래프 범례</h4>
+          <div className="legend-item-row">
+            범례색상 
             <div className="color-scale">
               {[1, 2, 3, 4, 5].map(level => (
                 <div key={level} className="color-item">
-                  <span className="color-box" style={{ backgroundColor: getColorScale(level, 1, 5) }}></span>
-                  <span>수준 {level}</span>
+                  <span className="color-box" style={{ backgroundColor: getColorScale(level) }}></span>
+                  <span>{level}</span>
                 </div>
               ))}
             </div>
@@ -473,20 +515,22 @@ const SkillFrequencyStep: React.FC<SkillFrequencyStepProps> = ({ onComplete, onP
         </div>
       </div>
       
-      <div className="step-navigation" style={{ marginTop: '20px' }}>
-        <button 
-          className="nav-button prev"
-          onClick={onPrev}
-        >
-          이전 단계
-        </button>
-        
-        <button 
-          className="nav-button next"
-          onClick={onComplete}
-        >
-          처음으로
-        </button>
+      <div className="step-navigation">
+        <div className="nav-buttons-container">
+          <button 
+            className="nav-button prev"
+            onClick={onPrev}
+          >
+            이전 단계
+          </button>
+          
+          <button 
+            className="nav-button next"
+            onClick={onComplete}
+          >
+            처음으로
+          </button>
+        </div>
       </div>
     </div>
   );
