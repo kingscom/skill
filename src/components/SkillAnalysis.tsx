@@ -799,7 +799,7 @@ export function SkillAnalysis({ onBack }: SkillAnalysisProps) {
               integratedData={integratedData}
               onPrev={() => handlePrev()}
               completedSteps={completedSteps}
-              onComplete={() => console.log('Frequency step completed')}
+              onComplete={() => window.location.reload()}
             />
           </div>
         </div>
