@@ -69,11 +69,11 @@ function App() {
                   </svg>
                 </div>
                 <h3 className="card-title">스킬 분석</h3>
-                <p className="card-description">스킬을 분석하고 개선 방향을 제시합니다</p>
+                <p className="card-description">스킬을 분석하고 역량개발 우선순위를 제시합니다</p>
                 <ul className="card-features">
-                  <li>데이터 기반 역량 분석</li>
-                  <li>개인별 스킬 향상 방향 제시</li>
-                  <li>시각화된 분석 결과 제공</li>
+                  <li>파일 업로드</li>
+                  <li>데이터 확인 및 입력감 검증</li>
+                  <li>분석 결과 제공</li>
                 </ul>
                 <div className="card-action">
                   <span>분석하기</span>
@@ -87,7 +87,7 @@ function App() {
           
           {/* Footer */}
           <div className="main-footer">
-            <p>© 2023 역량 향상 프레임워크</p>
+            <p>© 2025 역량 향상 프레임워크</p>
           </div>
         </div>
       ) : currentView === 'selection' ? (

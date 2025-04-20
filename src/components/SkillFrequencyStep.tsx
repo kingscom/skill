@@ -500,7 +500,6 @@ const SkillFrequencyStep: React.FC<SkillFrequencyStepProps> = ({ onComplete, onP
       
       <div className="legend">
         <div className="legend-content-row">
-          <h4>그래프 범례</h4>
           <div className="legend-item-row">
             범례색상 
             <div className="color-scale">
