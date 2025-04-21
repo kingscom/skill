@@ -263,6 +263,7 @@ export const ValidationStep: React.FC<ValidationStepProps> = ({
               type="number"
               min="0"
               max="5"
+              step="0.5"
               value={value !== undefined && value !== null ? value : ''}
               onChange={(e) => handleDataChange(
                 selectedSkill as number, 
@@ -285,6 +286,7 @@ export const ValidationStep: React.FC<ValidationStepProps> = ({
               type="number"
               min="0"
               max="5"
+              step="0.5"
               value={value !== undefined && value !== null ? value : ''}
               onChange={(e) => handleDataChange(
                 selectedSkill as number, 
