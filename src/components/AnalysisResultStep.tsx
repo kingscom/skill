@@ -273,18 +273,73 @@ export const AnalysisResultStep: React.FC<AnalysisResultStepProps> = ({
     const chartHeight = height - padding.top - padding.bottom;
     
     // 스케일 함수 (데이터 -> 화면 좌표 변환)
-    const xMin = Math.min(...analysisData.map(d => d.expectedLevel)) * 0.95;
-    const xMax = Math.max(...analysisData.map(d => d.expectedLevel)) * 1.05;
-    const yMin = chartType === 'gap' 
-      ? Math.min(...analysisData.map(d => d.gap)) * 1.1
-      : Math.min(...analysisData.map(d => d.borichValue)) * 1.1;
-    const yMax = chartType === 'gap'
-      ? Math.max(...analysisData.map(d => d.gap)) * 1.1
-      : Math.max(...analysisData.map(d => d.borichValue)) * 1.1;
+    // Function to detect and handle outliers using IQR method
+    const removeOutliers = (values: number[], factor = 1.5) => {
+      if (values.length < 4) return values; // Need at least 4 points for meaningful outlier detection
+      
+      // Sort values
+      const sorted = [...values].sort((a, b) => a - b);
+      
+      // Calculate quartiles
+      const q1Index = Math.floor(sorted.length * 0.25);
+      const q3Index = Math.floor(sorted.length * 0.75);
+      const q1 = sorted[q1Index];
+      const q3 = sorted[q3Index];
+      
+      // Calculate IQR and bounds
+      const iqr = q3 - q1;
+      const lowerBound = q1 - factor * iqr;
+      const upperBound = q3 + factor * iqr;
+      
+      // Filter out extreme outliers for scaling purposes
+      return values.map(v => {
+        if (v < lowerBound) return lowerBound;
+        if (v > upperBound) return upperBound;
+        return v;
+      });
+    };
+
+    // Calculate min/max values with more padding and protection against extreme values
+    const calculateAxisRange = (values: number[], isPaddingPercent = 0.15) => {
+      // Handle outliers for better scaling
+      const filteredValues = removeOutliers(values);
+      
+      const min = Math.min(...filteredValues);
+      const max = Math.max(...filteredValues);
+      const range = max - min;
+      
+      // Add extra padding to ensure points aren't at the very edge
+      const paddedMin = range === 0 ? min - 0.5 : min - range * isPaddingPercent;
+      const paddedMax = range === 0 ? max + 0.5 : max + range * isPaddingPercent;
+      
+      return { min: paddedMin, max: paddedMax };
+    };
+
+    // Apply the new calculation function to get better ranges
+    const xRange = calculateAxisRange(analysisData.map(d => d.expectedLevel));
+    const yRange = calculateAxisRange(
+      chartType === 'gap' 
+        ? analysisData.map(d => d.gap)
+        : analysisData.map(d => d.borichValue)
+    );
+
+    const xMin = xRange.min;
+    const xMax = xRange.max;
+    const yMin = yRange.min;
+    const yMax = yRange.max;
     
-    // x, y 값을 화면 좌표로 변환하는 함수
-    const xScale = (x: number) => padding.left + (x - xMin) / (xMax - xMin) * chartWidth;
-    const yScale = (y: number) => padding.top + chartHeight - (y - yMin) / (yMax - yMin) * chartHeight;
+    // x, y 값을 화면 좌표로 변환하는 함수 - 좌표가 벗어나지 않도록 clamp 추가
+    const xScale = (x: number) => {
+      // Ensure the x value is within bounds
+      const clampedX = Math.max(xMin, Math.min(xMax, x));
+      return padding.left + (clampedX - xMin) / (xMax - xMin) * chartWidth;
+    };
+    
+    const yScale = (y: number) => {
+      // Ensure the y value is within bounds
+      const clampedY = Math.max(yMin, Math.min(yMax, y));
+      return padding.top + chartHeight - (clampedY - yMin) / (yMax - yMin) * chartHeight;
+    };
     
     // 사분면 영역을 구분하는 선
     const xAxisPos = yScale(avgMetric);
@@ -303,9 +358,9 @@ export const AnalysisResultStep: React.FC<AnalysisResultStepProps> = ({
     // 사분면 레이블 위치
     const quadrantLabels = [
       { label: 'HH 영역', x: yAxisPos + chartWidth * 0.25, y: xAxisPos - chartHeight * 0.25 },
-      { label: 'HL 영역', x: yAxisPos - chartWidth * 0.25, y: xAxisPos - chartHeight * 0.25 },
+      { label: 'LH 영역', x: yAxisPos - chartWidth * 0.25, y: xAxisPos - chartHeight * 0.25 },
       { label: 'LL 영역', x: yAxisPos - chartWidth * 0.25, y: xAxisPos + chartHeight * 0.25 },
-      { label: 'LH 영역', x: yAxisPos + chartWidth * 0.25, y: xAxisPos + chartHeight * 0.25 },
+      { label: 'HL 영역', x: yAxisPos + chartWidth * 0.25, y: xAxisPos + chartHeight * 0.25 },
     ];
     
     // 툴팁 표시 함수
@@ -413,8 +468,25 @@ export const AnalysisResultStep: React.FC<AnalysisResultStepProps> = ({
           
           {/* 데이터 포인트 */}
           {analysisData.map((item, i) => {
-            const x = xScale(item.expectedLevel);
-            const y = yScale(chartType === 'gap' ? item.gap : item.borichValue);
+            const originalX = item.expectedLevel;
+            const originalY = chartType === 'gap' ? item.gap : item.borichValue;
+            
+            // Get the bounded values
+            const boundedValues = {
+              x: removeOutliers([originalX])[0],
+              y: removeOutliers(chartType === 'gap' 
+                ? [originalY] 
+                : [originalY])[0]
+            };
+            
+            // Check if this point was clamped/bounded due to being an outlier
+            const isOutlier = 
+              boundedValues.x !== originalX || 
+              boundedValues.y !== originalY;
+            
+            const x = xScale(boundedValues.x);
+            const y = yScale(boundedValues.y);
+            
             return (
               <g key={i}>
                 <circle 
@@ -424,15 +496,22 @@ export const AnalysisResultStep: React.FC<AnalysisResultStepProps> = ({
                   fill={chartType === 'gap' 
                     ? (item.gap > avgMetric ? '#f8a5c2' : '#63e6be') 
                     : (item.borichValue > avgMetric ? '#f8a5c2' : '#63e6be')} 
-                  stroke="#495057" 
-                  strokeWidth="1"
+                  stroke={isOutlier ? "#ff0000" : "#495057"} 
+                  strokeWidth={isOutlier ? 2 : 1}
                   style={{ cursor: 'pointer' }}
                   onMouseEnter={(e) => {
                     const svgRect = e.currentTarget.ownerSVGElement?.getBoundingClientRect();
                     if (svgRect) {
                       const mouseX = e.clientX - svgRect.left;
                       const mouseY = e.clientY - svgRect.top;
-                      showTooltip(item, mouseX, mouseY);
+                      // Include outlier information in tooltip
+                      const outlierInfo = isOutlier ? 
+                        "\n(※ 이 데이터는 이상치로 스케일 조정됨)" : "";
+                      showTooltip({
+                        ...item,
+                        // Add outlier notice if applicable
+                        requiredCompetency: `${item.requiredCompetency}${outlierInfo}`
+                      }, mouseX, mouseY);
                     }
                   }}
                   onMouseLeave={hideTooltip}
@@ -445,6 +524,14 @@ export const AnalysisResultStep: React.FC<AnalysisResultStepProps> = ({
                     }
                   }}
                 />
+                {/* Add a special marker for outliers */}
+                {isOutlier && (
+                  <path
+                    d={`M${x-6},${y-6} L${x+6},${y+6} M${x+6},${y-6} L${x-6},${y+6}`}
+                    stroke="#ff0000"
+                    strokeWidth="1.5"
+                  />
+                )}
                 <text 
                   x={x} 
                   y={y - 10} 
@@ -567,7 +654,19 @@ export const AnalysisResultStep: React.FC<AnalysisResultStepProps> = ({
             fill="#495057">
             * 차트의 번호는 위항목의 스킬셋 번호입니다.
           </text>
+          
         </svg>
+        
+        {/* 이상치 처리 안내 */}
+        <div style={{ 
+          fontSize: '11px', 
+          color: '#555', 
+          marginTop: '5px', 
+          textAlign: 'right',
+          fontStyle: 'italic'
+        }}>
+          * 극단값이 포함된 경우 시각화를 위해 스케일이 자동 조정됩니다.
+        </div>
       </div>
     );
   };
@@ -653,10 +752,10 @@ export const AnalysisResultStep: React.FC<AnalysisResultStepProps> = ({
           quadrant = 'HH';
           priority = '최우선 개발 필요';
         } else if (item.expectedLevel > avgExpectedLevel && item.gap <= avgGap) {
-          quadrant = 'HL';
+          quadrant = 'LH';
           priority = '현 수준 유지 필요';
         } else if (item.expectedLevel <= avgExpectedLevel && item.gap > avgGap) {
-          quadrant = 'LH';
+          quadrant = 'HL';
           priority = '선별적 개발 필요';
         } else {
           quadrant = 'LL';
@@ -713,10 +812,10 @@ export const AnalysisResultStep: React.FC<AnalysisResultStepProps> = ({
           quadrant = 'HH';
           priority = '최우선 개발 필요';
         } else if (item.expectedLevel > avgExpectedLevel && item.gap <= avgGap) {
-          quadrant = 'HL';
+          quadrant = 'LH';
           priority = '현 수준 유지 필요';
         } else if (item.expectedLevel <= avgExpectedLevel && item.gap > avgGap) {
-          quadrant = 'LH';
+          quadrant = 'HL';
           priority = '선별적 개발 필요';
         } else {
           quadrant = 'LL';
@@ -754,10 +853,10 @@ export const AnalysisResultStep: React.FC<AnalysisResultStepProps> = ({
           quadrant = 'HH';
           priority = '최우선 개발 필요';
         } else if (item.expectedLevel > avgExpectedLevel && item.borichValue <= avgBorich) {
-          quadrant = 'HL';
+          quadrant = 'LH';
           priority = '현 수준 유지 필요';
         } else if (item.expectedLevel <= avgExpectedLevel && item.borichValue > avgBorich) {
-          quadrant = 'LH';
+          quadrant = 'HL';
           priority = '선별적 개발 필요';
         } else {
           quadrant = 'LL';
@@ -972,8 +1071,8 @@ export const AnalysisResultStep: React.FC<AnalysisResultStepProps> = ({
                       <h5 style={{ fontSize: '1rem', marginBottom: '0.5rem' }}>2x2 메트릭스 해석 가이드</h5>
                       <ul style={{ fontSize: '0.9rem', paddingLeft: '1.5rem' }}>
                         <li><strong>HH 영역</strong>: 요구역량(기대수준)이 높고, GAP/Borich 요구도가 높음 → <span style={{ color: '#d9534f' }}>최우선 개발 필요</span></li>
-                        <li><strong>HL 영역</strong>: 요구역량(기대수준)이 높으나, GAP/Borich 요구도가 낮음 → <span style={{ color: '#0275d8' }}>현 수준 유지 필요</span></li>
-                        <li><strong>LH 영역</strong>: 요구역량(기대수준)은 낮으나, GAP/Borich 요구도가 높음 → <span style={{ color: '#f0ad4e' }}>선별적 개발 필요</span></li>
+                        <li><strong>HL 영역</strong>: 요구역량(기대수준)은 낮으나, GAP/Borich 요구도가 높음 → <span style={{ color: '#f0ad4e' }}>선별적 개발 필요</span></li>
+                        <li><strong>LH 영역</strong>: 요구역량(기대수준)이 높으나, GAP/Borich 요구도가 낮음 → <span style={{ color: '#0275d8' }}>현 수준 유지 필요</span></li>
                         <li><strong>LL 영역</strong>: 요구역량(기대수준)이 낮고, GAP/Borich 요구도도 낮음 → <span style={{ color: '#5cb85c' }}>개발 우선순위 낮음</span></li>
                       </ul>
                     </div>
@@ -991,7 +1090,7 @@ export const AnalysisResultStep: React.FC<AnalysisResultStepProps> = ({
                     <li><strong>t-value</strong>: t-검정 통계량으로 차이의 유의미성 표시</li>
                     <li><strong>borich 요구도</strong>: Σ(기대수준-현재수준) * 기대수준평균 / 팀원 수</li>
                   </ul>
-                  <p><em>* 우선순위가 낮을수록 개발이 더 필요한 역량입니다.</em></p>
+                  <p><em>* 우선순위가 높을수록 개발이 더 필요한 역량입니다.</em></p>
                 </div>
                 {analysisData.length > 0 && (
                 <button 
