@@ -1071,7 +1071,7 @@ export const AnalysisResultStep: React.FC<AnalysisResultStepProps> = ({
                       <h5 style={{ fontSize: '1rem', marginBottom: '0.5rem' }}>2x2 메트릭스 해석 가이드</h5>
                       <ul style={{ fontSize: '0.9rem', paddingLeft: '1.5rem' }}>
                         <li><strong>HH 영역</strong>: 요구역량(기대수준)이 높고, GAP/Borich 요구도가 높음 → <span style={{ color: '#d9534f' }}>최우선 개발 필요</span></li>
-                        <li><strong>HL 영역</strong>: 요구역량(기대수준)은 높으나 GAP/Borich 요구도는 낮음→ <span style={{ color: '#f0ad4e' }}>선별적 개발 필요</span></li>
+                        <li><strong>HL 영역</strong>: 요구역량(기대수준)은 높으나 GAP/Borich 요구도는 낮음→ <span style={{ color: '#0275d8' }}>선별적 개발 필요</span></li>
                         <li><strong>LH 영역</strong>: 요구역량(기대수준)은 낮으나 GAP/Borich 요구도는 높음 → <span style={{ color: '#0275d8' }}>선별적 개발 필요</span></li>
                         <li><strong>LL 영역</strong>: 요구역량(기대수준)이 낮고, GAP/Borich 요구도도 낮음 → <span style={{ color: '#5cb85c' }}>개발 우선순위 낮음</span></li>
                       </ul>
