@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import '../styles/SkillAnalysis.css';
+import '../styles/AnalysisResultStep.css';
 import { SkillData } from './SkillAnalysis';
 import * as XLSX from 'xlsx';
 import { saveAs } from 'file-saver';
@@ -24,6 +25,7 @@ interface AnalysisResultItem {
   tValue: number;
   borichValue: number;
   borichRank: number;
+  rowNumber: number; // 고정된 행 번호 추가
 }
 
 export const AnalysisResultStep: React.FC<AnalysisResultStepProps> = ({
@@ -98,7 +100,7 @@ export const AnalysisResultStep: React.FC<AnalysisResultStepProps> = ({
     }
     
     // 전체 스킬셋에 대한 분석 데이터 생성
-    const analysisItems: AnalysisResultItem[] = integratedData.map(skill => {
+    const analysisItems: AnalysisResultItem[] = integratedData.map((skill, index) => {
       // 리더를 제외한 팀원들의 현재 수준과 기대 수준 평균 계산
       const members = skill.조직리스트 || [];
       const teamMembers = members.filter(m => 
@@ -143,7 +145,8 @@ export const AnalysisResultStep: React.FC<AnalysisResultStepProps> = ({
         gapRank: 0, // 초기값, 나중에 계산
         tValue: parseFloat(tValue.toFixed(3)),
         borichValue: parseFloat(borichValue.toFixed(2)),
-        borichRank: 0 // 초기값, 나중에 계산
+        borichRank: 0, // 초기값, 나중에 계산
+        rowNumber: index + 1 // 고정된 행 번호 추가
       };
     });
     
@@ -391,8 +394,9 @@ export const AnalysisResultStep: React.FC<AnalysisResultStepProps> = ({
       <div className="ipa-chart" style={{ position: 'relative', width: '560px', height: '400px' }}>
         <h4 className="chart-title">
           {chartType === 'gap' 
-            ? '요구역량-GAP 2x2 메트릭스' 
-            : '요구역량-Borich 요구도 2x2 메트릭스'}
+            ? '기대수준 GAP 2x2 메트릭스' 
+            : 'Borich 요구도 2x2 메트릭스'}
+          
         </h4>
         
         {/* 툴팁 */}
@@ -488,14 +492,29 @@ export const AnalysisResultStep: React.FC<AnalysisResultStepProps> = ({
             const y = yScale(boundedValues.y);
             
             return (
-              <g key={i}>
+              <g key={item.skillName}>
                 <circle 
                   cx={x} 
                   cy={y} 
                   r={6} 
-                  fill={chartType === 'gap' 
-                    ? (item.gap > avgMetric ? '#f8a5c2' : '#63e6be') 
-                    : (item.borichValue > avgMetric ? '#f8a5c2' : '#63e6be')} 
+                  fill={(() => {
+                    // 현재 위치를 기준으로 사분면 결정
+                    const isHighExpectedLevel = item.expectedLevel > avgExpectedLevel;
+                    const isHighMetric = chartType === 'gap' 
+                      ? item.gap > avgMetric 
+                      : item.borichValue > avgMetric;
+                    
+                    // 각 사분면별 색상 지정
+                    if (isHighExpectedLevel && isHighMetric) {
+                      return '#f8a5c2'; // HH 영역 (빨간색 계열) - 1사분면
+                    } else if (isHighExpectedLevel && !isHighMetric) {
+                      return '#63c5e6'; // LH 영역 (파란색 계열) - 2사분면
+                    } else if (!isHighExpectedLevel && !isHighMetric) {
+                      return '#63e6be'; // LL 영역 (녹색 계열) - 3사분면
+                    } else { // (!isHighExpectedLevel && isHighMetric)
+                      return '#63c5e6'; // HL 영역 (파란색 계열) - 4사분면
+                    }
+                  })()} 
                   stroke={isOutlier ? "#ff0000" : "#495057"} 
                   strokeWidth={isOutlier ? 2 : 1}
                   style={{ cursor: 'pointer' }}
@@ -665,8 +684,27 @@ export const AnalysisResultStep: React.FC<AnalysisResultStepProps> = ({
           textAlign: 'right',
           fontStyle: 'italic'
         }}>
-          * 극단값이 포함된 경우 시각화를 위해 스케일이 자동 조정됩니다.
         </div>
+      </div>
+    );
+  };
+  
+  // 메트릭스 설명 툴팁 (페이지 최상위에 위치) */}
+  const renderTooltipElement = () => {
+    return (
+      <div 
+        id="analysis-description-tooltip" 
+        className="analysis-tooltip"
+      >
+        <p><strong>분석 방법 설명:</strong></p>
+        <ul>
+          <li><strong>현재수준 평균</strong>: 리더를 제외한 팀원들의 현재 스킬 수준 평균값</li>
+          <li><strong>기대수준 평균</strong>: 리더를 제외한 팀원들의 기대 스킬 수준 평균값</li>
+          <li><strong>gap</strong>: 기대수준과 현재수준의 차이</li>
+          <li><strong>t-value</strong>: t-검정 통계량으로 차이의 유의미성 표시</li>
+          <li><strong>borich 요구도</strong>: Σ(기대수준-현재수준) * 기대수준평균 / 팀원 수</li>
+        </ul>
+        <p><em>* 우선순위가 높을수록 개발이 더 필요한 역량입니다.</em></p>
       </div>
     );
   };
@@ -955,12 +993,40 @@ export const AnalysisResultStep: React.FC<AnalysisResultStepProps> = ({
     }
   };
   
+  // 툴팁 표시/숨김 함수 추가
+  const showAnalysisTooltip = (e: React.MouseEvent<HTMLSpanElement>) => {
+    const tooltipElement = document.getElementById('analysis-description-tooltip');
+    if (tooltipElement) {
+      const rect = e.currentTarget.getBoundingClientRect();
+      tooltipElement.style.top = `${window.scrollY + rect.top - 10}px`;
+      tooltipElement.style.left = `${rect.right + 10}px`;
+      tooltipElement.style.display = 'block';
+    }
+  };
+  
+  const hideAnalysisTooltip = () => {
+    const tooltipElement = document.getElementById('analysis-description-tooltip');
+    if (tooltipElement) {
+      tooltipElement.style.display = 'none';
+    }
+  };
+  
   return (
     <>
+      {/* 툴팁 요소 렌더링 */}
+      {renderTooltipElement()}
+      
       {completedSteps.has('validation') ? (
         <div className="analysis-content">
-          <h3>요구도 분석 결과</h3>
-          <p>IPA, Borich, The Locus for Focus 방법론을 활용한 스킬 요구도 분석 결과입니다. (리더 제외)</p>
+          <h3>교육 우선순위 분석<span 
+            className="tooltip-icon"
+            onMouseEnter={showAnalysisTooltip}
+            onMouseLeave={hideAnalysisTooltip}
+          >
+            ?
+          </span></h3>
+          
+          <p>교육 요구분석 방법론(IPA, Borich, The Locus for Focus)를 활용한 분석 결과입니다. (리더값 제외)</p>
           
           {isLoading ? (
             <div className="loading-indicator">
@@ -977,7 +1043,7 @@ export const AnalysisResultStep: React.FC<AnalysisResultStepProps> = ({
                     <table className="data-table">
                       <thead>
                         <tr>
-                          <th style={{ width: '40px' }}>No.</th>
+                          <th className="th-no">No.</th>
                           <th style={getHeaderStyle('skillSet')} onClick={() => requestSort('skillSet')}>
                             스킬셋{getSortDirection('skillSet')}
                           </th>
@@ -1008,29 +1074,29 @@ export const AnalysisResultStep: React.FC<AnalysisResultStepProps> = ({
                         </tr>
                       </thead>
                       <tbody>
-                        {getSortedData().map((item, index) => (
-                          <tr key={index}>
-                            <td>{index + 1}</td>
+                        {getSortedData().map((item) => (
+                          <tr key={item.skillName}>
+                            <td>{item.rowNumber}</td>
                             <td>{item.skillSet}</td>
                             <td>{item.requiredCompetency}</td>
                             <td>{item.currentLevel.toFixed(2)}</td>
                             <td>{item.expectedLevel.toFixed(2)}</td>
-                            <td style={{ color: item.gap > 0 ? '#d9534f' : '#5cb85c' }}>
+                            <td className={item.gap > 0 ? "text-danger" : "text-success"}>
                               {item.gap.toFixed(2)}
                             </td>
-                            <td style={{ color: '#0275d8', fontWeight: 'bold' }}>
+                            <td className="text-primary fw-bold">
                               {item.gapRank}
                             </td>
-                            <td style={{ color: item.tValue > 3 ? '#d9534f' : '#666' }}>
+                            <td className={item.tValue > 3 ? "text-danger" : "text-muted"}>
                               {item.tValue.toFixed(3)}
                             </td>
                             <td>{item.borichValue.toFixed(2)}</td>
-                            <td style={{ color: '#0275d8', fontWeight: 'bold' }}>
+                            <td className="text-primary fw-bold">
                               {item.borichRank}
                             </td>
                           </tr>
                         ))}
-                        <tr style={{ backgroundColor: '#f5f5f5', fontWeight: 'bold' }}>
+                        <tr className="average-row">
                           <td></td>
                           <td></td>
                           <td>평균</td>
@@ -1057,67 +1123,50 @@ export const AnalysisResultStep: React.FC<AnalysisResultStepProps> = ({
                 
                 {/* 2x2 메트릭스 차트 영역 */}
                 {analysisData.length > 0 && (
-                  <div className="charts-container" ref={chartContainerRef} style={{ marginTop: '2rem' }}>
-                    <div className="charts-row" style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'space-around', gap: '2rem' }}>
-                      <div className="chart-wrapper" style={{ width: '560px', height: '400px', flexShrink: 0 }}>
+                  <div className="charts-container" ref={chartContainerRef}>
+                    <div className="charts-row">
+                      <div className="chart-wrapper">
                         {renderChart('gap')}
                       </div>
-                      <div className="chart-wrapper" style={{ width: '560px', height: '400px', flexShrink: 0 }}>
+                      <div className="chart-wrapper">
                         {renderChart('borich')}
                       </div>
                     </div>
                     
-                    <div className="chart-explanation" style={{ marginTop: '1rem', padding: '1rem', backgroundColor: '#f8f9fa', borderRadius: '0.5rem' }}>
-                      <h5 style={{ fontSize: '1rem', marginBottom: '0.5rem' }}>2x2 메트릭스 해석 가이드</h5>
-                      <ul style={{ fontSize: '0.9rem', paddingLeft: '1.5rem' }}>
-                        <li><strong>HH 영역</strong>: 요구역량(기대수준)이 높고, GAP/Borich 요구도가 높음 → <span style={{ color: '#d9534f' }}>최우선 개발 필요</span></li>
-                        <li><strong>HL 영역</strong>: 요구역량(기대수준)은 높으나 GAP/Borich 요구도는 낮음→ <span style={{ color: '#0275d8' }}>선별적 개발 필요</span></li>
-                        <li><strong>LH 영역</strong>: 요구역량(기대수준)은 낮으나 GAP/Borich 요구도는 높음 → <span style={{ color: '#0275d8' }}>선별적 개발 필요</span></li>
-                        <li><strong>LL 영역</strong>: 요구역량(기대수준)이 낮고, GAP/Borich 요구도도 낮음 → <span style={{ color: '#5cb85c' }}>개발 우선순위 낮음</span></li>
+                    <div className="chart-explanation">
+                      <h5>2x2 메트릭스 해석 가이드</h5>
+                      <ul className="quadrant-guide">
+                        <li>
+                          <span className="color-marker color-hh"></span>
+                          <strong>HH 영역</strong>: 요구역량(기대수준)이 높고, GAP/Borich 요구도가 높음 → <span className="text-danger">최우선 개발 필요</span>
+                        </li>
+                        <li>
+                          <span className="color-marker color-hl"></span>
+                          <strong>HL 영역</strong>: 요구역량(기대수준)은 낮으나, GAP/Borich 요구도가 높음 → <span className="text-primary">선별적 개발 필요</span>
+                        </li>
+                        <li>
+                          <span className="color-marker color-lh"></span>
+                          <strong>LH 영역</strong>: 요구역량(기대수준)이 높으나, GAP/Borich 요구도가 낮음 → <span className="text-primary">현 수준 유지 필요</span>
+                        </li>
+                        <li>
+                          <span className="color-marker color-ll"></span>
+                          <strong>LL 영역</strong>: 요구역량(기대수준)이 낮고, GAP/Borich 요구도도 낮음 → <span className="text-success">개발 우선순위 낮음</span>
+                        </li>
                       </ul>
                     </div>
                   </div>
                 )}
                 
-                <div className="analysis-description" style={{ marginTop: '1rem', fontSize: '0.9rem', color: '#666' }}>
-                  <p>
-                    <strong>분석 방법 설명:</strong>
-                  </p>
-                  <ul>
-                    <li><strong>현재수준 평균</strong>: 리더를 제외한 팀원들의 현재 스킬 수준 평균값</li>
-                    <li><strong>기대수준 평균</strong>: 리더를 제외한 팀원들의 기대 스킬 수준 평균값</li>
-                    <li><strong>gap</strong>: 기대수준과 현재수준의 차이</li>
-                    <li><strong>t-value</strong>: t-검정 통계량으로 차이의 유의미성 표시</li>
-                    <li><strong>borich 요구도</strong>: Σ(기대수준-현재수준) * 기대수준평균 / 팀원 수</li>
-                  </ul>
-                  <p><em>* 우선순위가 높을수록 개발이 더 필요한 역량입니다.</em></p>
-                </div>
                 {analysisData.length > 0 && (
                 <button 
                   className="report-button" 
                   onClick={createExcelReport}
-                  style={{
-                    padding: '12px 24px',
-                    backgroundColor: '#4285F4',
-                    color: 'white',
-                    border: 'none',
-                    borderRadius: '4px',
-                    cursor: 'pointer',
-                    fontWeight: 'bold',
-                    margin: 'auto',
-                    display: 'block',
-                    boxShadow: '0 2px 5px rgba(0,0,0,0.2)',
-                    fontSize: '14px'
-                  }}
                 >
                   엑셀 리포트 생성
                 </button>
               )}
                 
               </div>
-
-              
-              
             </div>
           )}
         </div>

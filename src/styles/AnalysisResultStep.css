@@ -1,0 +1,229 @@
+/* 분석 결과 스텝 스타일 */
+
+/* 타이틀 및 컨텐츠 영역 */
+.analysis-content {
+  width: 100%;
+}
+
+/* 툴팁 아이콘 */
+.tooltip-icon {
+  display: inline-block;
+  margin-left: 8px;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background-color: #6c757d;
+  color: white;
+  text-align: center;
+  line-height: 18px;
+  font-size: 12px;
+  cursor: pointer;
+  position: relative;
+}
+
+/* 분석 설명 툴팁 */
+.analysis-tooltip {
+  display: none;
+  position: absolute;
+  z-index: 1000;
+  width: 450px;
+  background-color: rgba(0, 0, 0, 0.8);
+  color: white;
+  padding: 12px;
+  border-radius: 6px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+  font-size: 0.9rem;
+  line-height: 1.5;
+}
+
+.analysis-tooltip ul {
+  padding-left: 20px;
+  margin-top: 5px;
+  margin-bottom: 5px;
+}
+
+/* 로딩 인디케이터 */
+.loading-indicator {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 40px 0;
+}
+
+.spinner {
+  border: 4px solid rgba(0, 0, 0, 0.1);
+  border-radius: 50%;
+  border-top: 4px solid #0275d8;
+  width: 40px;
+  height: 40px;
+  animation: spin 1s linear infinite;
+  margin-bottom: 10px;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+/* 테이블 스타일 */
+.analysis-table {
+  overflow-x: auto;
+  margin-bottom: 2rem;
+}
+
+.data-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.9rem;
+}
+
+.data-table th, .data-table td {
+  padding: 0.75rem;
+  border: 1px solid #dee2e6;
+  text-align: center;
+}
+
+.data-table th {
+  background-color: #f8f9fa;
+  font-weight: bold;
+}
+
+.th-no {
+  width: 40px;
+}
+
+.text-danger {
+  color: #d9534f;
+}
+
+.text-success {
+  color: #5cb85c;
+}
+
+.text-primary {
+  color: #0275d8;
+}
+
+.text-muted {
+  color: #666;
+}
+
+.fw-bold {
+  font-weight: bold;
+}
+
+.average-row {
+  background-color: #f5f5f5;
+  font-weight: bold;
+}
+
+/* 차트 컨테이너 */
+.charts-container {
+  margin-top: 2rem;
+}
+
+.charts-row {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-around;
+  gap: 2rem;
+}
+
+.chart-wrapper {
+  width: 560px;
+  height: 400px;
+  flex-shrink: 0;
+}
+
+/* 차트 설명 */
+.chart-explanation {
+  margin-top: 1rem;
+  margin-bottom: 1rem;
+  padding: 1rem;
+  background-color: #f8f9fa;
+  border-radius: 0.5rem;
+  
+}
+
+.chart-explanation h5 {
+  font-size: 1rem;
+  margin-bottom: 0.5rem;
+}
+
+.quadrant-guide {
+  font-size: 0.9rem;
+  list-style-type: none;
+  padding-left: 0;
+}
+
+.color-marker {
+  display: inline-block;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  margin-right: 5px;
+}
+
+.color-hh {
+  background-color: #f8a5c2;
+}
+
+.color-hl, .color-lh {
+  background-color: #63c5e6;
+}
+
+.color-ll {
+  background-color: #63e6be;
+}
+
+/* 엑셀 리포트 버튼 */
+.report-button {
+  padding: 12px 24px;
+  background-color: #4285F4;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-weight: bold;
+  margin: auto;
+  display: block;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+  font-size: 14px;
+}
+
+.report-button:hover {
+  background-color: #3367d6;
+}
+
+/* 빈 상태 메시지 */
+.empty-state {
+  text-align: center;
+  padding: 40px;
+  background-color: #f8f9fa;
+  border-radius: 8px;
+  margin: 20px 0;
+}
+
+.nav-button {
+  margin-top: 15px;
+  padding: 8px 16px;
+  background-color: #0275d8;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+/* IPA 차트 스타일 */
+.ipa-chart {
+  position: relative;
+  width: 560px;
+  height: 400px;
+}
+
+.chart-title {
+  text-align: center;
+  margin-bottom: 10px;
+  font-size: 1rem;
+} 
