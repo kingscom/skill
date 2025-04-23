@@ -5,7 +5,11 @@ import { SkillItem } from '../types/skill'
 
 interface DataItem {
   스킬셋: string,
-  요구역량: string,
+  스킬셋정의: string,
+  업무내용: string,
+  업무스킬정의: string,
+  업무스킬: string,
+  지향점: string,
   L1: string,
   L2: string,
   L3: string,
@@ -46,17 +50,18 @@ export function SkillModal({
     async function fetchData() {
       try {
         const { data: fetchedData, error } = await supabase
-          .from('skill_list')
-          .select('*')
+          .rpc('get_skill')
 
         if (error) {
           console.error('Supabase error:', error)
           throw error
         }
 
+        console.log('조회 결과:', fetchedData)
+
         // 중복 제거
         const uniqueSkills = new Set()
-        const uniqueData = fetchedData.filter(item => {
+        const uniqueData = fetchedData.filter((item: DataItem) => {
           if (uniqueSkills.has(item.스킬셋)) {
             return false
           }
@@ -138,12 +143,13 @@ export function SkillModal({
                         {isShowDetail ? '레벨상세숨기기' : '레벨상세보기'}
                       </button>
                     </h3>
+                    <h5> ▶ {selectedSkill[0].스킬셋정의} </h5>
+                    <br/>
                     <div className="data-table-detail-content">
                       {selectedSkill.map((skill) => (
                         <div>
-                          <h4> ■ {skill.요구역량}
-                            
-                          </h4>
+                          <h4> ■ {skill.업무스킬} </h4>
+                          <h5> → {skill.업무스킬정의} </h5>
                           {isShowDetail && (
                             <>
                               <p>- L1: {skill.L1}</p>
@@ -163,7 +169,10 @@ export function SkillModal({
                           ...item,
                           팀: team,
                           팀업무: teamWork,
-                          핵심기술: coreSkill
+                          핵심기술: coreSkill,
+                          업무스킬: item.업무스킬,
+                          현재수준: '',
+                          기대수준: ''
                         }));
                         onAddSkill(skillItems);
                       }}

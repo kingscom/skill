@@ -1,6 +1,10 @@
 export interface SkillItem {
   스킬셋: string;
-  요구역량: string;
+  업무스킬: string;
+  현재수준: string;
+  기대수준: string;
+  스킬셋정의: string;
+  업무스킬정의: string;
   팀: string;
   팀업무: string;
   핵심기술: string;

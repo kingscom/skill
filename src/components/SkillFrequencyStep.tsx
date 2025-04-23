@@ -156,7 +156,7 @@ const SkillFrequencyStep: React.FC<SkillFrequencyStepProps> = ({ onComplete, onP
           
           return {
             id: index,
-            skill_name: item.요구역량 || '',
+            skill_name: item.업무스킬 || '',
             category: item.구분 || '미분류',
             team: item.팀 || '',
             frequency: validCount,
@@ -183,7 +183,7 @@ const SkillFrequencyStep: React.FC<SkillFrequencyStepProps> = ({ onComplete, onP
         // Convert to SkillRecord format
         skillRecords = data.map((item, index) => ({
           id: index,
-          skill_name: item.요구역량 || '',
+          skill_name: item.업무스킬 || '',
           category: item.구분 || '미분류',
           team: item.팀명 || '',
           frequency: 1,

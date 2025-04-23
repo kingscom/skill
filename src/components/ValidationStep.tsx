@@ -75,7 +75,7 @@ export const ValidationStep: React.FC<ValidationStepProps> = ({
     
     const index = editedData.findIndex(skill => 
       skill.스킬셋 === skillSet.trim() && 
-      skill.요구역량 === cleanRequirement.trim()
+      skill.업무스킬 === cleanRequirement.trim()
     );
     
     return index >= 0 ? index : null;
@@ -142,7 +142,7 @@ export const ValidationStep: React.FC<ValidationStepProps> = ({
 
   // 통합 데이터셋 검증
   const hasSkillSets = editedData.some(item => item.스킬셋);
-  const hasRequirements = editedData.some(item => item.요구역량);
+  const hasRequirements = editedData.some(item => item.업무스킬);
   
   // 조직리스트 존재 여부 확인
   const hasOrganizationList = editedData.some(item => 
@@ -472,7 +472,7 @@ export const ValidationStep: React.FC<ValidationStepProps> = ({
         description: '모든 역량에 같은 점수를 입력한 응답',
         detected: true,
         details: `${fixedValueSkills.length}개 스킬에서 고정값 입력 발견.\n영향 받는 스킬:\n${
-          fixedValueSkills.map(s => `${s.스킬셋}(${s.요구역량})`).join('\n')
+          fixedValueSkills.map(s => `${s.스킬셋}(${s.업무스킬})`).join('\n')
         }`
       });
     } else {
@@ -499,7 +499,7 @@ export const ValidationStep: React.FC<ValidationStepProps> = ({
           if (!highExpectationMembers[member.이름]) {
             highExpectationMembers[member.이름] = [];
           }
-          highExpectationMembers[member.이름].push(`${skill.스킬셋}(${skill.요구역량})`);
+          highExpectationMembers[member.이름].push(`${skill.스킬셋}(${skill.업무스킬})`);
         }
       });
     });
@@ -553,7 +553,7 @@ export const ValidationStep: React.FC<ValidationStepProps> = ({
       
       // 리더와 구성원들의 기대수준 차이가 큰 경우
       if (Math.abs(leaderExpectation - membersExpectationAvg) >= 1.0) {
-        leaderExpectationGapSkills.push(`${skill.스킬셋}(${skill.요구역량}): 리더 ${leaderExpectation.toFixed(1)} vs 구성원 ${membersExpectationAvg.toFixed(1)}`);
+        leaderExpectationGapSkills.push(`${skill.스킬셋}(${skill.업무스킬}): 리더 ${leaderExpectation.toFixed(1)} vs 구성원 ${membersExpectationAvg.toFixed(1)}`);
       }
     });
     
@@ -595,7 +595,7 @@ export const ValidationStep: React.FC<ValidationStepProps> = ({
       
       // 50% 이상이 극단값인 경우
       if (extremeRatio >= 0.5) {
-        extremeValueSkills.push(`${skill.스킬셋}(${skill.요구역량}): ${Math.round(extremeRatio * 100)}%가 극단값`);
+        extremeValueSkills.push(`${skill.스킬셋}(${skill.업무스킬}): ${Math.round(extremeRatio * 100)}%가 극단값`);
       }
     });
     
@@ -638,7 +638,7 @@ export const ValidationStep: React.FC<ValidationStepProps> = ({
       
       // 차이가 2.5 이상인 경우
       if (range >= 2.5) {
-        highVarianceSkills.push(`${skill.스킬셋}(${skill.요구역량}): ${minExpectation}~${maxExpectation}`);
+        highVarianceSkills.push(`${skill.스킬셋}(${skill.업무스킬}): ${minExpectation}~${maxExpectation}`);
       }
     });
     
@@ -684,7 +684,7 @@ export const ValidationStep: React.FC<ValidationStepProps> = ({
       
       // 표준편차가 1.0 이상인 경우
       if (stdDev >= 1.0) {
-        highStdDevSkills.push(`${skill.스킬셋}(${skill.요구역량}): 표준편차 ${stdDev.toFixed(2)}`);
+        highStdDevSkills.push(`${skill.스킬셋}(${skill.업무스킬}): 표준편차 ${stdDev.toFixed(2)}`);
       }
     });
     
@@ -761,7 +761,7 @@ export const ValidationStep: React.FC<ValidationStepProps> = ({
       
       // 리더와 구성원 GAP 차이가 0.9 이상인 경우
       if (Math.abs(leaderGap - avgMemberGap) >= 0.9) {
-        gapDifferenceSkills.push(`${skill.스킬셋}(${skill.요구역량}): 리더 GAP ${leaderGap.toFixed(1)} vs 구성원 GAP ${avgMemberGap.toFixed(1)}`);
+        gapDifferenceSkills.push(`${skill.스킬셋}(${skill.업무스킬}): 리더 GAP ${leaderGap.toFixed(1)} vs 구성원 GAP ${avgMemberGap.toFixed(1)}`);
       }
     });
     
@@ -802,7 +802,7 @@ export const ValidationStep: React.FC<ValidationStepProps> = ({
           .map(m => `${m.이름}(현재:${m.현재수준} > 기대:${m.기대수준})`)
           .join(', ');
         
-        reversedExpectationSkills.push(`${skill.스킬셋}(${skill.요구역량}): ${membersWithReversedExpectation.length}명 - ${memberNames}`);
+        reversedExpectationSkills.push(`${skill.스킬셋}(${skill.업무스킬}): ${membersWithReversedExpectation.length}명 - ${memberNames}`);
       }
     });
     
@@ -942,7 +942,7 @@ export const ValidationStep: React.FC<ValidationStepProps> = ({
                   <option value="">선택하세요</option>
                   {editedData.map((skill, index) => (
                     <option key={index} value={index}>
-                      {skill.스킬셋} - {skill.요구역량}
+                      {skill.스킬셋} - {skill.업무스킬}
                     </option>
                   ))}
                 </select>

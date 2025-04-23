@@ -103,7 +103,7 @@ export const SkillSetManager: React.FC<SkillSetManagerProps> = ({ onBack }) => {
     ];
     
     const skillWs = utils.json_to_sheet(allSkills, {
-      header: ['구분', '스킬셋', '요구역량', '현재수준', '기대수준', 'L1', 'L2', 'L3', 'L4', 'L5']
+      header: ['구분', '스킬셋', '업무스킬', '현재수준', '기대수준', '스킬셋정의', '업무스킬정의', 'L1', 'L2', 'L3', 'L4', 'L5']
     });
     
     const skillColWidths = [
@@ -112,6 +112,8 @@ export const SkillSetManager: React.FC<SkillSetManagerProps> = ({ onBack }) => {
       { wch: 40 },
       { wch: 10 },
       { wch: 10 },
+      { wch: 30 },
+      { wch: 30 },
       { wch: 30 },
       { wch: 30 },
       { wch: 30 },
@@ -204,7 +206,7 @@ export const SkillSetManager: React.FC<SkillSetManagerProps> = ({ onBack }) => {
                   </div>
                   <div className="skill-requirements">
                     {skills.map((skill, index) => (
-                      <p key={index} className="skill-requirement"> - {skill.요구역량}</p>
+                      <p key={index} className="skill-requirement"> - {skill.업무스킬}</p>
                     ))}
                   </div>
                 </div>
@@ -242,7 +244,7 @@ export const SkillSetManager: React.FC<SkillSetManagerProps> = ({ onBack }) => {
                   </div>
                   <div className="skill-requirements">
                     {skills.map((skill, index) => (
-                      <p key={index} className="skill-requirement">- {skill.요구역량}</p>
+                      <p key={index} className="skill-requirement">- {skill.업무스킬}</p>
                     ))}
                   </div>
                 </div>

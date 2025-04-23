@@ -24,20 +24,20 @@ export interface DataSheet {
 
 // 통합 데이터셋 인터페이스 정의
 export interface SkillData {
-  팀?: string;
-  팀업무?: string;
-  핵심기술?: string;
+  팀: string;
+  팀업무: string;
+  핵심기술: string;
   스킬셋: string;
-  요구역량: string;
-  구분?: string;
-  현재수준?: number;
-  기대수준?: number;
-  L1?: string;
-  L2?: string;
-  L3?: string;
-  L4?: string;
-  L5?: string;
-  조직리스트?: Array<{
+  업무스킬: string;
+  구분: string;
+  현재수준: number;
+  기대수준: number;
+  L1: string;
+  L2: string;
+  L3: string;
+  L4: string;
+  L5: string;
+  조직리스트: Array<{
     이름: string;
     현재수준: string | number;
     기대수준: string | number;
@@ -238,7 +238,7 @@ export function SkillAnalysis({ onBack }: SkillAnalysisProps) {
     // 스킬셋 및 요구역량 데이터 처리
     skillSheet.forEach(skill => {
       const skillSet = skill['스킬셋'] || '';
-      const requirement = skill['요구역량'] || '';
+      const requirement = skill['업무스킬'] || skill['요구역량'] || '';
       const currentLevel = skill['현재수준'] || '';
       const expectedLevel = skill['기대수준'] || '';
       const category = skill['구분'] || '미분류';
@@ -250,7 +250,7 @@ export function SkillAnalysis({ onBack }: SkillAnalysisProps) {
           팀업무: teamWork,
           핵심기술: coreSkill,
           스킬셋: skillSet,
-          요구역량: requirement,
+          업무스킬: requirement,
           구분: category,
           조직리스트 : []
         });
@@ -425,7 +425,7 @@ export function SkillAnalysis({ onBack }: SkillAnalysisProps) {
           return {
             팀명: teamName,
             스킬셋: skill.스킬셋,
-            요구역량: skill.요구역량,
+            업무스킬: skill.업무스킬,
             현재역량평균: 0,
             기대역량평균: 0,
             분석일자: new Date()
@@ -457,7 +457,7 @@ export function SkillAnalysis({ onBack }: SkillAnalysisProps) {
           팀명: teamName,
           순번: saveNo++,
           스킬셋: skill.스킬셋,
-          요구역량: skill.요구역량,
+          업무스킬: skill.업무스킬,
           구분: skill.구분 || '미분류',
           현재역량: parseFloat(avgCurrent.toFixed(2)),
           기대역량: parseFloat(avgExpected.toFixed(2)),
