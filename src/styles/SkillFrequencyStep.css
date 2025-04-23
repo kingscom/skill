@@ -9,7 +9,6 @@
 
 .controls {
   display: flex;
-  justify-content: space-between;
   margin-bottom: 20px;
   padding: 15px;
   background-color: #fff;
@@ -266,6 +265,21 @@ select {
 .recharts-scatter-symbol:hover {
   opacity: 0.8;
   transform: none !important;
+}
+
+/* Selected node styling */
+.node.selected circle {
+  animation: pulse 1.5s infinite alternate;
+  filter: drop-shadow(0 0 8px rgba(255, 69, 0, 0.7));
+}
+
+@keyframes pulse {
+  from {
+    filter: drop-shadow(0 0 5px rgba(255, 69, 0, 0.7));
+  }
+  to {
+    filter: drop-shadow(0 0 12px rgba(255, 69, 0, 0.9));
+  }
 }
 
 .recharts-default-legend {
