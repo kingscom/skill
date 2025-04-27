@@ -140,27 +140,12 @@
   border-radius: 3px;
 }
 
-.step-navigation {
-  display: flex;
-  justify-content: space-between;
-  margin-top: 1rem;
-}
 
 .nav-buttons-container {
   display: flex;
   gap: 1rem;
 }
 
-.nav-button {
-  padding: 0.6rem 1.2rem;
-  border: none;
-  border-radius: 4px;
-  background-color: #4a6cf7;
-  color: white;
-  font-weight: 600;
-  cursor: pointer;
-  transition: background-color 0.2s ease;
-}
 
 .nav-button:hover {
   background-color: #3551d1;
@@ -283,7 +268,7 @@
     flex-direction: column;
     align-items: flex-start;
   }
-
+  
   .skill-set-selector,
   .color-mode-selector {
     width: 100%;
@@ -293,7 +278,7 @@
   .color-mode-selector select {
     width: 100%;
   }
-
+  
   .graph-container {
     height: 450px;
   }

@@ -273,7 +273,7 @@ export function SkillAnalysis({ onBack }: SkillAnalysisProps) {
           현재수준: '',
           기대수준: ''
         };
-
+        
         // 인덱스에 따라 현재/기대 수준 필드 이름 결정
         const currentLevelField = i === 0 ? '현재수준' : `현재수준${i+1}`;
         const expectedLevelField = i === 0 ? '기대수준' : `기대수준${i+1}`;
@@ -401,7 +401,7 @@ export function SkillAnalysis({ onBack }: SkillAnalysisProps) {
       // Supabase에 데이터 저장을 위해 기존 데이터를 확인
       // 먼저 기존 데이터 삭제 후 저장
       const teamName = data[0]?.팀 || '미지정';
-      
+
       var saveNo = 0;
       // 각 스킬에 대한 평균 기대역량 및 현재역량 계산
       const skillAnalysisData = data.map(skill => {

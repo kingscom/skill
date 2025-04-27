@@ -86,18 +86,18 @@ const SkillFrequencyStep: React.FC<SkillFrequencyStepProps> = ({ onComplete, onP
   // Fetch data from Supabase
   const fetchData = useCallback(async () => {
     try {
-      setLoading(true);
+    setLoading(true);
       
       let rawData: any[] = [];
     
       const { data, error } = await supabase.from('frequency_data').select('*');
       
       if (error) throw error;
-      
-      if (!data || data.length === 0) {
-        throw new Error('데이터를 찾을 수 없습니다. 이전 단계에서 데이터를 먼저 저장해주세요.');
-      }
-      
+        
+        if (!data || data.length === 0) {
+          throw new Error('데이터를 찾을 수 없습니다. 이전 단계에서 데이터를 먼저 저장해주세요.');
+        }
+        
       rawData = data;
       
       // 주스킬-부스킬 계층 구조 데이터 생성
@@ -231,7 +231,7 @@ const SkillFrequencyStep: React.FC<SkillFrequencyStepProps> = ({ onComplete, onP
           현재역량값: [d.현재역량],
           count: 1
         });
-      } else {
+          } else {
         const group = groupedMap.get(key);
         group.기대역량값.push(d.기대역량);
         group.현재역량값.push(d.현재역량);
@@ -267,7 +267,7 @@ const SkillFrequencyStep: React.FC<SkillFrequencyStepProps> = ({ onComplete, onP
 
     const svg = d3.select(svgRef.current);
     const width = 800;
-    const height = 600;
+    const height = 400;
     svg.attr("width", width).attr("height", height);
 
     // 이전 줌 상태
@@ -441,10 +441,10 @@ const SkillFrequencyStep: React.FC<SkillFrequencyStepProps> = ({ onComplete, onP
         .attr("height", legendHeight)
         .style("fill", colors[i]);
         
-      svg.append("text")
+            svg.append("text")
         .attr("x", legendX + (i * legendBlockWidth) + (legendBlockWidth / 2))
         .attr("y", legendY + legendHeight + 15)
-        .attr("text-anchor", "middle")
+              .attr("text-anchor", "middle")
         .style("font-size", "12px")
         .text(i + 1);
     }
@@ -560,7 +560,7 @@ const SkillFrequencyStep: React.FC<SkillFrequencyStepProps> = ({ onComplete, onP
     zoomControls.append("text")
       .attr("x", 15)
       .attr("y", 90)
-      .attr("text-anchor", "middle")
+          .attr("text-anchor", "middle")
       .style("font-size", "10px")
       .style("pointer-events", "none")
       .style("user-select", "none")
@@ -672,7 +672,7 @@ const SkillFrequencyStep: React.FC<SkillFrequencyStepProps> = ({ onComplete, onP
       </div>
         </div>
         
-      <div className="graph-container" style={{ position: 'relative', flex: 1, minHeight: '600px', width: '100%', overflow: 'hidden' }}>
+      <div className="graph-container" style={{ position: 'relative', flex: 1, minHeight: '400px', width: '100%', overflow: 'hidden' }}>
         <svg ref={svgRef} style={{ width: '100%', height: '100%' }}></svg>
       </div>
       

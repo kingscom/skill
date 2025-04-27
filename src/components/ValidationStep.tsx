@@ -20,6 +20,13 @@ interface OrganizationMember {
   기대수준: string | number;
 }
 
+// 수정된 데이터 저장을 위한 타입
+interface EditableData {
+  skillIndex: number;
+  memberIndex: number;
+  value: string | number;
+  field: '현재수준' | '기대수준';
+}
 
 // 행/셀 타입 정의
 interface TableRow {
