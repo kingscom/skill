@@ -20,13 +20,6 @@ interface OrganizationMember {
   기대수준: string | number;
 }
 
-// 수정된 데이터 저장을 위한 타입
-interface EditableData {
-  skillIndex: number;
-  memberIndex: number;
-  value: string | number;
-  field: '현재수준' | '기대수준';
-}
 
 // 행/셀 타입 정의
 interface TableRow {
@@ -130,7 +123,6 @@ export const ValidationStep: React.FC<ValidationStepProps> = ({
   // integratedData가 변경될 때마다 editedData 업데이트
   useEffect(() => {
     if (integratedData && integratedData.length > 0) {
-      console.log('인테그레이티드 데이터 업데이트:', integratedData);
       setEditedData(integratedData);
       
       // 선택된 스킬이 없거나 유효하지 않은 경우 첫 번째 스킬 선택
@@ -174,28 +166,7 @@ export const ValidationStep: React.FC<ValidationStepProps> = ({
   // 디버깅 용도로 추가
   useEffect(() => {
     if (hasMissingOrganizationData) {
-      console.log('누락된 데이터가 있는 조직리스트:', 
-        editedData.filter(item => 
-          item.조직리스트 && item.조직리스트.some(member => {
-            // 현재수준 검사
-            const currentLevel = member.현재수준;
-            const isCurrentLevelMissing = 
-              currentLevel === undefined || 
-              currentLevel === null || 
-              (typeof currentLevel === 'string' && currentLevel.trim() === '');
-            
-            // 기대수준 검사
-            const expectedLevel = member.기대수준;
-            const isExpectedLevelMissing = 
-              expectedLevel === undefined || 
-              expectedLevel === null || 
-              (typeof expectedLevel === 'string' && expectedLevel.trim() === '');
-            
-            // 둘 중 하나라도 누락되었는지 확인
-            return isCurrentLevelMissing || isExpectedLevelMissing;
-          })
-        )
-      );
+      // Here, we just check for missing data without logging
     }
   }, [hasMissingOrganizationData, editedData]);
 
@@ -238,7 +209,6 @@ export const ValidationStep: React.FC<ValidationStepProps> = ({
         newData[skillIndex].조직리스트[memberIndex]
       ) {
         newData[skillIndex].조직리스트[memberIndex][field] = value;
-        console.log('데이터 변경됨:', newData[skillIndex].조직리스트[memberIndex]);
       }
       return newData;
     });
@@ -329,7 +299,6 @@ export const ValidationStep: React.FC<ValidationStepProps> = ({
   // react-table 인스턴스 생성
   const tableData = useMemo(() => {
     if (selectedSkillData && selectedSkillData.조직리스트) {
-      console.log('테이블 데이터 업데이트:', selectedSkillData.조직리스트);
       return selectedSkillData.조직리스트;
     }
     return [];
@@ -397,7 +366,6 @@ export const ValidationStep: React.FC<ValidationStepProps> = ({
     
     // 수정된 데이터를 부모 컴포넌트로 전달
     if (onDataUpdate) {
-      console.log('저장된 데이터:', editedData);
       onDataUpdate(editedData);
     }
     

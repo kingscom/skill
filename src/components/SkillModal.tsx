@@ -49,15 +49,13 @@ export function SkillModal({
 
     async function fetchData() {
       try {
+        setLoading(true);
         const { data: fetchedData, error } = await supabase
           .rpc('get_skill')
 
         if (error) {
-          console.error('Supabase error:', error)
           throw error
         }
-
-        console.log('조회 결과:', fetchedData)
 
         // 중복 제거
         const uniqueSkills = new Set()
@@ -124,7 +122,6 @@ export function SkillModal({
                     setSelectedSkill([]);
                     const selectedValue = e.target.value;
                     const foundSkill = data.filter(item => item.스킬셋 === selectedValue);
-                    console.log(foundSkill);
                     setSelectedSkill(foundSkill);
                   }}
                 >

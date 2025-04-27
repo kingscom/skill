@@ -67,15 +67,12 @@ export function SkillAnalysis({ onBack }: SkillAnalysisProps) {
   
   // 유효성 검사 후 데이터 업데이트 처리
   const handleDataUpdate = useCallback((updatedData: SkillData[]) => {
-    console.log('SkillAnalysis - 데이터 업데이트 수신:', updatedData);
-    
     if (updatedData && updatedData.length > 0) {
       // 업데이트된 데이터의 깊은 복사본 생성
       const newData = JSON.parse(JSON.stringify(updatedData));
       setIntegratedData(newData);
-      console.log('SkillAnalysis - 업데이트된 통합 데이터:', newData);
     } else {
-      console.warn('SkillAnalysis - 빈 데이터가 전달되었습니다');
+      // 빈 데이터가 전달되었습니다
     }
   }, []);
   
@@ -182,8 +179,6 @@ export function SkillAnalysis({ onBack }: SkillAnalysisProps) {
         setDataset(sheets);
         setIntegratedData(integrated);
         setIsLoading(false);
-        console.log('데이터셋 로드 완료:', sheets);
-        console.log('통합 데이터셋:', integrated);
         
         // 업로드 완료 후 다음 단계로 이동
         setCompletedSteps(prev => {
@@ -213,7 +208,6 @@ export function SkillAnalysis({ onBack }: SkillAnalysisProps) {
   
   // 데이터셋 통합 함수
   const integrateDatasets = (rawSheets: Record<string, any[]>): SkillData[] => {
-    console.log('데이터셋 통합 시작:', rawSheets);
     const integrated: SkillData[] = [];
     const sheetNames = Object.keys(rawSheets);
     
@@ -269,7 +263,6 @@ export function SkillAnalysis({ onBack }: SkillAnalysisProps) {
       
       // 스킬맵 키를 배열로 변환
       const skillKeys = Array.from(skillMap.keys());
-      console.log('스킬 키 목록:', skillKeys);
 
       for (let i = 0; i < skillKeys.length; i++) {
         const skillKey = skillKeys[i];
@@ -281,8 +274,6 @@ export function SkillAnalysis({ onBack }: SkillAnalysisProps) {
           기대수준: ''
         };
 
-        console.log('레벨 데이터:', i);
-        
         // 인덱스에 따라 현재/기대 수준 필드 이름 결정
         const currentLevelField = i === 0 ? '현재수준' : `현재수준${i+1}`;
         const expectedLevelField = i === 0 ? '기대수준' : `기대수준${i+1}`;
@@ -290,8 +281,6 @@ export function SkillAnalysis({ onBack }: SkillAnalysisProps) {
         // 레벨 데이터 가져오기
         data.현재수준 = level[currentLevelField] || '';
         data.기대수준 = level[expectedLevelField] || '';
-        
-        // console.log(`조직원 ${name} 스킬 ${skillKey} 데이터:`, data);
         
         // 유효한 키인 경우에만 조직리스트에 추가
         if (skillMap.has(skillKey)) {
@@ -305,7 +294,6 @@ export function SkillAnalysis({ onBack }: SkillAnalysisProps) {
       integrated.push(value);
     });
     
-    console.log('통합된 데이터셋:', integrated);
     return integrated;
   };
   
@@ -393,8 +381,6 @@ export function SkillAnalysis({ onBack }: SkillAnalysisProps) {
 
   // 입력값 검증 완료 처리
   const completeValidationStep = async () => {
-    console.log('입력값 검증 완료, 현재 통합 데이터:', integratedData);
-
     await saveIntegratedData(integratedData);
     
     setCompletedSteps(prev => {
@@ -416,8 +402,6 @@ export function SkillAnalysis({ onBack }: SkillAnalysisProps) {
       // 먼저 기존 데이터 삭제 후 저장
       const teamName = data[0]?.팀 || '미지정';
       
-      console.log(data);
-
       var saveNo = 0;
       // 각 스킬에 대한 평균 기대역량 및 현재역량 계산
       const skillAnalysisData = data.map(skill => {
@@ -472,7 +456,6 @@ export function SkillAnalysis({ onBack }: SkillAnalysisProps) {
         .eq('팀명', teamName);
       
       if (deleteError) {
-        console.error('기존 데이터 삭제 오류:', deleteError);
         // 삭제 실패해도 계속 진행
       }
       
@@ -483,21 +466,15 @@ export function SkillAnalysis({ onBack }: SkillAnalysisProps) {
         .select();
       
       if (insertError) {
-        console.error('데이터 저장 오류:', insertError);
         alert('데이터 저장에 실패했습니다: ' + insertError.message);
-      } else {
-        console.log('데이터 저장 성공:', insertedData);
       }
     } catch (dbErr) {
-      console.error('데이터베이스 작업 오류:', dbErr);
       alert('데이터베이스 작업 중 오류가 발생했습니다.');
     }
   };
   
   // 분석 결과 완료 처리
   const completeAnalysisStep = () => {
-    console.log('분석 결과 완료, 스킬셋 빈도 분석으로 이동');
-    
     setCompletedSteps(prev => {
       const newSet = new Set(prev);
       newSet.add('analysis');
