@@ -9,9 +9,10 @@ const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY || '';
 const supabase = createClient(supabaseUrl, supabaseKey);
 
 // Constants
-const CIRCLE_MIN_SIZE = 20;
-const CIRCLE_MAX_SIZE = 100;
-const PADDING = 20;
+const CIRCLE_MIN_SIZE = 30;
+const CIRCLE_MAX_SIZE = 75;
+const PADDING = 15;
+const MAIN_SKILL_MULTIPLIER = 1.3;
 
 // Types
 interface SkillFrequencyStepProps {
@@ -53,6 +54,15 @@ interface GroupedDataItem {
   vx?: number;
   vy?: number;
   index?: number;
+  // For drag functionality
+  fx?: number | null;
+  fy?: number | null;
+}
+
+// For link representation
+interface SkillLink {
+  source: GroupedDataItem;
+  target: GroupedDataItem;
 }
 
 // Color mode options
@@ -266,8 +276,9 @@ const SkillFrequencyStep: React.FC<SkillFrequencyStepProps> = ({ onComplete, onP
     d3.select("body").selectAll(".tooltip").remove();
 
     const svg = d3.select(svgRef.current);
-    const width = 800;
-    const height = 400;
+    const containerElement = svgRef.current.parentElement;
+    const width = containerElement ? containerElement.clientWidth : 800;
+    const height = containerElement ? containerElement.clientHeight : 500;
     svg.attr("width", width).attr("height", height);
 
     // 이전 줌 상태
@@ -309,16 +320,74 @@ const SkillFrequencyStep: React.FC<SkillFrequencyStepProps> = ({ onComplete, onP
       return;
     }
 
-    // Scale for bubble size based on frequency - MOVED THIS UP before it's used
+    // Categorize data into main skills and multi-skills
+    const mainSkills = groupedData.filter(d => d.구분 === '주스킬');
+    const multiSkills = groupedData.filter(d => d.구분 !== '주스킬');
+    
+    // Group multi-skills by 스킬셋
+    const skillSetGroups = d3.group(multiSkills, d => d.스킬셋);
+    
+    // Scale for bubble size based on frequency - with better distribution
     const rScale = d3.scaleSqrt()
       .domain([1, d3.max(groupedData, d => d.빈도수) || 10])
       .range([CIRCLE_MIN_SIZE, CIRCLE_MAX_SIZE]);
-
-    // Define a force simulation for bubble positioning
+    
+    // Create the custom force simulation with wider layout
     const simulation = d3.forceSimulation<GroupedDataItem>(groupedData)
-      .force("center", d3.forceCenter(centerX, centerY)) // Center the bubbles
-      .force("charge", d3.forceManyBody().strength(5)) // A small repulsion between nodes
-      .force("collide", d3.forceCollide<GroupedDataItem>().radius(d => d.빈도수 ? rScale(d.빈도수) + PADDING : PADDING)); // Prevent overlap
+      // Center force - slightly reduced strength for more spread
+      .force("center", d3.forceCenter(centerX, centerY).strength(0.8))
+      // Stronger repulsion between nodes for better distribution
+      .force("charge", d3.forceManyBody().strength((d) => {
+        const node = d as unknown as GroupedDataItem;
+        // Stronger repulsion for better spread across the width
+        return node.구분 === '주스킬' ? -150 : -80;
+      }))
+      // Prevent overlap with stronger collision for main skills
+      .force("collide", d3.forceCollide<GroupedDataItem>().radius((d) => {
+        const node = d as unknown as GroupedDataItem;
+        const baseRadius = node.빈도수 ? rScale(node.빈도수) : CIRCLE_MIN_SIZE;
+        // Main skills get larger collision radius
+        return node.구분 === '주스킬' ? baseRadius * MAIN_SKILL_MULTIPLIER + PADDING : baseRadius + PADDING;
+      }).strength(1)) // Full strength for collision prevention
+      // X-positioning force to spread across width
+      .force("x", d3.forceX().x(centerX).strength(0.05))
+      // Y-positioning with slight vertical separation
+      .force("y", d3.forceY().y(centerY).strength(0.05));
+    
+    // Add force to group multi-skills by skillset - with wider distribution
+    if (skillSetGroups.size > 1) {
+      // Create positions for each skill set group - spreading across the width better
+      const groupPositions: {[key: string]: {x: number, y: number}} = {};
+      const groupCount = skillSetGroups.size;
+      
+      // Use an elliptical distribution to better use width
+      const radiusX = width * 0.4; // Use more of the available width
+      const radiusY = height * 0.3; // Less vertical spread
+      
+      // Position skill set groups in an elliptical pattern around the center
+      let index = 0;
+      skillSetGroups.forEach((_, key) => {
+        const angle = (index / groupCount) * 2 * Math.PI;
+        groupPositions[key] = {
+          x: centerX + radiusX * Math.cos(angle),
+          y: centerY + radiusY * Math.sin(angle)
+        };
+        index++;
+      });
+      
+      // Custom force to attract nodes to their skill set group position
+      simulation.force("group", d3.forceX<GroupedDataItem>().x(d => {
+        const node = d as unknown as GroupedDataItem;
+        if (node.구분 === '주스킬') return centerX;
+        return groupPositions[node.스킬셋]?.x || centerX;
+      }).strength(0.3)); // Increased strength for better grouping
+      
+      simulation.force("group-y", d3.forceY<GroupedDataItem>().y(d => {
+        const node = d as unknown as GroupedDataItem;
+        if (node.구분 === '주스킬') return centerY;
+        return groupPositions[node.스킬셋]?.y || centerY;
+      }).strength(0.3)); // Increased strength for better grouping
+    }
 
     // 5단계 색상 스케일로 변경 (노랑->빨강 계열)
     const colors = ['#FFEB3B', '#FFC107', '#FF9800', '#FF5722', '#B71C1C'];
@@ -330,12 +399,12 @@ const SkillFrequencyStep: React.FC<SkillFrequencyStepProps> = ({ onComplete, onP
       ])
       .range(colors);
 
-    // Create tooltip
+    // Create tooltip with improved styling
     const tooltip = d3.select("body").append("div")
       .attr("class", "tooltip")
       .style("opacity", 0)
       .style("position", "absolute")
-      .style("background", "white")
+      .style("background", "rgba(255, 255, 255, 0.95)")
       .style("padding", "8px")
       .style("border", "1px solid #ccc")
       .style("border-radius", "4px")
@@ -344,59 +413,155 @@ const SkillFrequencyStep: React.FC<SkillFrequencyStepProps> = ({ onComplete, onP
       .style("z-index", "1000")
       .style("box-shadow", "0 2px 5px rgba(0,0,0,0.2)");
 
-    // Draw bubbles
+    // Draw bubble groups - first create links between main skills and their related multi-skills
+    if (mainSkills.length > 0 && multiSkills.length > 0) {
+      const links: SkillLink[] = [];
+      
+      // Create links between main skills and their related multi-skills
+      for (const multiSkill of multiSkills) {
+        // Find matching main skill with same skillset
+        const relatedMainSkill = mainSkills.find(main => main.스킬셋 === multiSkill.스킬셋);
+        if (relatedMainSkill) {
+          links.push({
+            source: relatedMainSkill,
+            target: multiSkill
+          });
+        }
+      }
+      
+      // Draw links with pale color and low opacity to not interfere with bubbles
+      container.selectAll<SVGLineElement, SkillLink>(".skill-link")
+        .data(links)
+        .join("line")
+        .attr("class", "skill-link")
+        .attr("stroke", "#cccccc")
+        .attr("stroke-width", 1)
+        .attr("stroke-opacity", 0.3)
+        .attr("x1", d => centerX)
+        .attr("y1", d => centerY)
+        .attr("x2", d => centerX)
+        .attr("y2", d => centerY);
+    }
+
+    // Draw bubbles with improved styling
     const bubbles = container
       .selectAll(".bubble")
       .data(groupedData)
       .join("circle")
-      .attr("class", "bubble")
-      .attr("r", (d: GroupedDataItem) => rScale(d.빈도수))
+      .attr("class", d => `bubble ${d.구분 === '주스킬' ? 'main-skill' : 'multi-skill'}`)
+      .attr("r", (d: GroupedDataItem) => {
+        const baseRadius = rScale(d.빈도수);
+        return d.구분 === '주스킬' ? baseRadius * MAIN_SKILL_MULTIPLIER : baseRadius;
+      })
       .attr("fill", (d: GroupedDataItem) => colorScale(colorMode === "기대역량" ? d.평균기대역량 : d.평균현재역량))
-      .attr("stroke", "#fff")
-      .attr("stroke-width", 1)
-      .attr("cx", (d: GroupedDataItem) => centerX)  // 시작 위치를 중앙으로 설정
+      .attr("stroke", (d: GroupedDataItem) => d.구분 === '주스킬' ? '#333' : '#fff')
+      .attr("stroke-width", (d: GroupedDataItem) => d.구분 === '주스킬' ? 2 : 1)
+      .attr("cx", (d: GroupedDataItem) => centerX)
       .attr("cy", (d: GroupedDataItem) => centerY)
-      .attr("opacity", 0.8)
+      .attr("opacity", 0.9) // Increased opacity
+      .style("cursor", "pointer")
       .on("mouseover", (event, d) => {
         tooltip.transition().duration(200).style("opacity", .9);
         tooltip.html(`
           <strong>스킬셋:</strong> ${d.스킬셋}<br/>
           <strong>업무스킬:</strong> ${d.업무스킬}<br/>
           <strong>구분:</strong> ${d.구분}<br/>
-          <strong>팀명:</strong> ${d.팀명}<br/>
           <strong>빈도수:</strong> ${d.빈도수}<br/>
           <strong>평균 기대역량:</strong> ${d.평균기대역량.toFixed(2)}<br/>
           <strong>평균 현재역량:</strong> ${d.평균현재역량.toFixed(2)}<br/>
         `)
         .style("left", (event.pageX + 10) + "px")
         .style("top", (event.pageY - 28) + "px");
+        
+        // Highlight related skills (same skillset)
+        container.selectAll(".bubble")
+          .filter((o: any) => o.스킬셋 === d.스킬셋)
+          .transition().duration(300)
+          .attr("stroke-width", 3)
+          .attr("stroke", "#333");
+        
+        // Highlight connections
+        container.selectAll<SVGLineElement, SkillLink>(".skill-link")
+          .filter((o: any) => 
+            (o.source.스킬셋 === d.스킬셋) || (o.target.스킬셋 === d.스킬셋)
+          )
+          .transition().duration(300)
+          .attr("stroke", "#666")
+          .attr("stroke-width", 2)
+          .attr("stroke-opacity", 0.6);
       })
-      .on("mouseout", () => {
+      .on("mouseout", (event, d) => {
         tooltip.transition().duration(500).style("opacity", 0);
-      });
+        
+        // Reset highlight
+        container.selectAll(".bubble")
+          .transition().duration(300)
+          .attr("stroke-width", (d: any) => d.구분 === '주스킬' ? 2 : 1)
+          .attr("stroke", (d: any) => d.구분 === '주스킬' ? '#333' : '#fff');
+        
+        // Reset connections
+        container.selectAll<SVGLineElement, SkillLink>(".skill-link")
+          .transition().duration(300)
+          .attr("stroke", "#cccccc")
+          .attr("stroke-width", 1)
+          .attr("stroke-opacity", 0.3);
+      })
+      // Add drag capability with improved behavior
+      .call(d3.drag<SVGCircleElement, GroupedDataItem>()
+        .on("start", (event, d) => {
+          if (!event.active) simulation.alphaTarget(0.3).restart();
+          d.fx = d.x;
+          d.fy = d.y;
+        })
+        .on("drag", (event, d) => {
+          d.fx = event.x;
+          d.fy = event.y;
+        })
+        .on("end", (event, d) => {
+          if (!event.active) simulation.alphaTarget(0);
+          // Keep position fixed after drag to prevent bouncing back
+          // Comment out these lines to allow nodes to return to simulation
+          // d.fx = null;
+          // d.fy = null;
+        }) as any
+      );
 
-    // Add labels to all bubbles (changed to show text always)
+    // Add labels with improved sizing
     container.selectAll(".bubble-text")
       .data(groupedData)
       .join("text")
       .attr("class", "bubble-text")
       .attr("text-anchor", "middle")
-      .attr("x", (d: GroupedDataItem) => centerX)  // 시작 위치를 중앙으로 설정
+      .attr("x", (d: GroupedDataItem) => centerX)
       .attr("y", (d: GroupedDataItem) => centerY)
       .attr("dy", ".3em")
-      .attr("font-size", (d: GroupedDataItem) => Math.min(2 * rScale(d.빈도수) / 3, 24))
-      .attr("fill", "white")  // 항상 흰색 텍스트
+      .attr("font-size", (d: GroupedDataItem) => {
+        const baseSize = Math.min(2 * rScale(d.빈도수) / 3, 12);
+        return d.구분 === '주스킬' ? baseSize * 1.2 : baseSize;
+      })
+      .attr("fill", "white")
       .style("pointer-events", "none")
       .style("font-weight", "bold")
-      .style("text-shadow", "0px 0px 3px rgba(0, 0, 0, 0.9)")  // 더 진한 그림자로 가독성 향상
-      .text((d: GroupedDataItem) => d.업무스킬);
+      .style("text-shadow", "0px 0px 3px rgba(0, 0, 0, 0.9)")
+      .text((d: GroupedDataItem) => {
+        return d.업무스킬;
+      });
 
-    // 최초 위치 설정을 위해 simulation을 일정 횟수 실행
-    for (let i = 0; i < 50; i++) {
+    // Run simulation steps initially to position nodes better
+    for (let i = 0; i < 100; i++) { // Increased initial ticks for better starting positions
       simulation.tick();
     }
 
-    // 일시적으로 애니메이션 없이 바로 위치 설정
+    // Update links positions based on node positions
+    const updateLinks = () => {
+      container.selectAll<SVGLineElement, SkillLink>(".skill-link")
+        .attr("x1", d => d.source.x || centerX)
+        .attr("y1", d => d.source.y || centerY)
+        .attr("x2", d => d.target.x || centerX)
+        .attr("y2", d => d.target.y || centerY);
+    };
+
+    // Position bubbles based on simulation
     bubbles
       .attr("cx", function(d) { return (d as GroupedDataItem).x || centerX; })
       .attr("cy", function(d) { return (d as GroupedDataItem).y || centerY; });
@@ -404,11 +569,16 @@ const SkillFrequencyStep: React.FC<SkillFrequencyStepProps> = ({ onComplete, onP
     container.selectAll(".bubble-text")
       .attr("x", function(d) { return (d as GroupedDataItem).x || centerX; })
       .attr("y", function(d) { return (d as GroupedDataItem).y || centerY; });
-
-    // 시뮬레이션 재시작 (tick 이벤트 핸들러 유지)
-    simulation.restart();
     
-    // Update node positions on each tick of the simulation (tick 이벤트 핸들러 다시 추가)
+    updateLinks();
+
+    // Configure simulation with slower cooling
+    simulation
+      .alpha(0.3) // Lower alpha for gentler movement
+      .alphaDecay(0.02) // Slower decay for more settling time
+      .restart();
+    
+    // Update positions on each tick
     simulation.on("tick", () => {
       bubbles
         .attr("cx", function(d) { return (d as GroupedDataItem).x || centerX; })
@@ -417,155 +587,20 @@ const SkillFrequencyStep: React.FC<SkillFrequencyStepProps> = ({ onComplete, onP
       container.selectAll(".bubble-text")
         .attr("x", function(d) { return (d as GroupedDataItem).x || centerX; })
         .attr("y", function(d) { return (d as GroupedDataItem).y || centerY; });
+      
+      updateLinks();
     });
     
-    // 시뮬레이션 이벤트 처리
+    // Handle simulation end
     simulation.on("end", () => {
       console.log("Force simulation ended");
     });
 
-    // Add color legend
     const legendWidth = 200;
     const legendHeight = 20;
     const legendX = width - legendWidth - 20;
     const legendY = 20;
-    
-    // 개별 색상 블록으로 범례 생성
-    const legendBlockWidth = legendWidth / 5;
-    
-    for (let i = 0; i < 5; i++) {
-      svg.append("rect")
-        .attr("x", legendX + (i * legendBlockWidth))
-        .attr("y", legendY)
-        .attr("width", legendBlockWidth)
-        .attr("height", legendHeight)
-        .style("fill", colors[i]);
-        
-            svg.append("text")
-        .attr("x", legendX + (i * legendBlockWidth) + (legendBlockWidth / 2))
-        .attr("y", legendY + legendHeight + 15)
-              .attr("text-anchor", "middle")
-        .style("font-size", "12px")
-        .text(i + 1);
-    }
 
-    // Add legend labels
-    svg.append("text")
-      .attr("x", legendX)
-      .attr("y", legendY - 5)
-      .attr("text-anchor", "start")
-      .style("font-size", "12px")
-      .text("낮음");
-
-    svg.append("text")
-      .attr("x", legendX + legendWidth)
-      .attr("y", legendY - 5)
-      .attr("text-anchor", "end")
-      .style("font-size", "12px")
-      .text("높음");
-
-    svg.append("text")
-      .attr("x", legendX + legendWidth / 2)
-      .attr("y", legendY - 5)
-      .attr("text-anchor", "middle")
-      .style("font-size", "14px")
-      .style("font-weight", "bold")
-      .text(colorMode);
-
-    // Add zoom controls
-    const zoomControls = svg.append("g")
-      .attr("transform", `translate(20, ${height - 60})`);
-    
-    // Zoom in button
-    zoomControls.append("rect")
-      .attr("x", 0)
-      .attr("y", 0)
-      .attr("width", 30)
-      .attr("height", 30)
-      .attr("fill", "#f0f0f0")
-      .attr("stroke", "#ccc")
-      .attr("rx", 5)
-      .style("cursor", "pointer")
-      .on("click", () => {
-        svg.transition().duration(300).call(
-          (zoom as any).scaleBy, 1.3
-        );
-        // 줌 상태 업데이트 (타이밍 조정을 위해 setTimeout 사용)
-        setTimeout(() => {
-          const currentTransform = d3.zoomTransform(svg.node() as any);
-          zoomRef.current.scale = currentTransform.k;
-          zoomRef.current.translate = [currentTransform.x, currentTransform.y];
-        }, 350);
-      });
-    
-    zoomControls.append("text")
-      .attr("x", 15)
-      .attr("y", 20)
-      .attr("text-anchor", "middle")
-      .style("font-size", "20px")
-      .style("pointer-events", "none")
-      .style("user-select", "none")
-      .text("+");
-    
-    // Zoom out button
-    zoomControls.append("rect")
-      .attr("x", 0)
-      .attr("y", 35)
-      .attr("width", 30)
-      .attr("height", 30)
-      .attr("fill", "#f0f0f0")
-      .attr("stroke", "#ccc")
-      .attr("rx", 5)
-      .style("cursor", "pointer")
-      .on("click", () => {
-        svg.transition().duration(300).call(
-          (zoom as any).scaleBy, 0.7
-        );
-        // 줌 상태 업데이트 (타이밍 조정을 위해 setTimeout 사용)
-        setTimeout(() => {
-          const currentTransform = d3.zoomTransform(svg.node() as any);
-          zoomRef.current.scale = currentTransform.k;
-          zoomRef.current.translate = [currentTransform.x, currentTransform.y];
-        }, 350);
-      });
-    
-    zoomControls.append("text")
-      .attr("x", 15)
-      .attr("y", 55)
-      .attr("text-anchor", "middle")
-      .style("font-size", "20px")
-      .style("pointer-events", "none")
-      .style("user-select", "none")
-      .text("-");
-    
-    // 리셋 버튼 추가
-    zoomControls.append("rect")
-      .attr("x", 0)
-      .attr("y", 70)
-      .attr("width", 30)
-      .attr("height", 30)
-      .attr("fill", "#f0f0f0")
-      .attr("stroke", "#ccc")
-      .attr("rx", 5)
-      .style("cursor", "pointer")
-      .on("click", () => {
-        svg.transition().duration(300).call(
-          (zoom as any).transform, d3.zoomIdentity
-        );
-        // 줌 상태 초기화
-        zoomRef.current.scale = 1;
-        zoomRef.current.translate = [0, 0];
-      });
-    
-    zoomControls.append("text")
-      .attr("x", 15)
-      .attr("y", 90)
-          .attr("text-anchor", "middle")
-      .style("font-size", "10px")
-      .style("pointer-events", "none")
-      .style("user-select", "none")
-      .text("리셋");
-      
   }, [groupedData, colorMode]);
 
 
@@ -637,7 +672,7 @@ const SkillFrequencyStep: React.FC<SkillFrequencyStepProps> = ({ onComplete, onP
     <div className="skill-frequency-container" style={{ height: 'calc(100vh - 80px)', display: 'flex', flexDirection: 'column' }}>
       <div className="controls">
         <div className="skill-set-selector">
-          <label>스킬셋 필터:</label>
+          <label>스킬셋 선택</label>
           <select 
             value={selectedSkillSet}
             onChange={(e) => handleSkillSetChange(e.target.value)}
@@ -649,7 +684,7 @@ const SkillFrequencyStep: React.FC<SkillFrequencyStepProps> = ({ onComplete, onP
         </div>
         
         <div className="color-mode-selector">
-          <label>색상 모드:</label>
+          <label>역량</label>
           <select 
             value={colorMode} 
             onChange={(e) => handleColorModeChange(e.target.value as ColorMode)}
@@ -659,18 +694,7 @@ const SkillFrequencyStep: React.FC<SkillFrequencyStepProps> = ({ onComplete, onP
           </select>
         </div>
         
-        <div className="display-mode-selector">
-          <label>표시 모드:</label>
-          <div className="button-toggle">
-            <button 
-              className={`toggle-button ${displayMode === '기본' ? 'active' : ''}`}
-              onClick={() => setDisplayMode('기본')}
-            >
-              기본 모드
-            </button>
-          </div>
       </div>
-        </div>
         
       <div className="graph-container" style={{ position: 'relative', flex: 1, minHeight: '400px', width: '100%', overflow: 'hidden' }}>
         <svg ref={svgRef} style={{ width: '100%', height: '100%' }}></svg>
@@ -683,15 +707,6 @@ const SkillFrequencyStep: React.FC<SkillFrequencyStepProps> = ({ onComplete, onP
             <div className="node-info">
               <span>• 버블 크기: 해당 스킬의 빈도수</span>
               <span>• 버블 색상: {colorMode} 수준 (1~5점: 노랑→주황→빨강)</span>
-              <span>• 버블 배치: 중앙에서 빈도수에 따라 자동 배치</span>
-              <span>• 줌 기능: 좌측 하단의 +/- 버튼 또는 마우스 휠 사용 (리셋 버튼으로 초기화)</span>
-              {displayMode === '계층' && (
-                <>
-                  <span>• 큰 원: 주스킬, 작은 원: 부스킬/멀티스킬</span>
-                  <span>• 선으로 연결된 노드: 같은 스킬셋 내 주스킬과 부스킬 관계</span>
-                  <span>• 노드 드래그: 노드를 드래그하여 위치 조정 가능</span>
-                </>
-              )}
             </div>
           </div>
         </div>
